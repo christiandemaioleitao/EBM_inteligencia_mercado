@@ -2,20 +2,15 @@ import os
 import re
 import requests
 import io
+import unicodedata
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
 
 # ==========================================
-# CONFIGURAÇÕES FÁCEIS DE EDITAR
+# CONFIGURACOES
 # ==========================================
 URL_BASE = "https://www.goiania.go.gov.br"
 URL_DIARIOS = "https://www.goiania.go.gov.br/shtml//portal/casacivil/lista_diarios.asp?ano=2026"
-
-# Lista reduzida para focar apenas nos dados estruturados
-PALAVRAS_CHAVE = [
-    "remembramento", 
-    "desmembramento"
-]
 
 ARQUIVO_CONTROLE = "ultimo_diario.txt"
 
@@ -23,9 +18,18 @@ TOKEN = os.environ.get('TELEGRAM_TOKEN')
 CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
 # ==========================================
 
+def remover_acentos(texto):
+    """Remove todos os acentos do texto (ex: à->a, ç->c, ã->a)"""
+    if not texto:
+        return ""
+    # Transforma os caracteres e ignora/remove os acentos
+    return unicodedata.normalize('NFKD', str(texto)).encode('ASCII', 'ignore').decode('utf-8')
+
 def send_telegram_message(text):
-    """Envia a mensagem para o Telegram, quebrando em partes se necessário."""
+    """Envia a mensagem para o Telegram"""
     url_api = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    
+    # Textos já estão sem acento, o que evita o corrompimento no envio
     partes = [text[i:i+4000] for i in range(0, len(text), 4000)]
     
     for parte in partes:
@@ -33,93 +37,56 @@ def send_telegram_message(text):
         resposta = requests.post(url_api, json=payload)
         
         if resposta.status_code != 200:
-            print(f"❌ O Telegram recusou a formatação HTML. Motivo: {resposta.text}")
+            print(f"ERRO DO TELEGRAM: {resposta.text}")
             texto_puro = parte.replace('<b>', '').replace('</b>', '').replace('<i>', '').replace('</i>', '').replace('<a href=', '').replace('</a>', '')
-            payload_seguro = {"chat_id": CHAT_ID, "text": "⚠️ [Modo Texto Puro]\n\n" + texto_puro}
+            payload_seguro = {"chat_id": CHAT_ID, "text": "[Modo Texto Puro]\n\n" + texto_puro}
             requests.post(url_api, json=payload_seguro)
         else:
-            print("✅ Mensagem enviada com sucesso pro Telegram!")
+            print("Mensagem enviada com sucesso pro Telegram!")
 
-def extract_page_occurrences(texto, palavras_chave, num_pagina):
+def extrair_blocos_remembramento(texto_sem_acento, num_pagina):
     """
-    Varre a página identificando 'zonas' onde as palavras aparecem. 
-    Busca ativamente por Interessado e Endereço para certidões.
+    Busca os trechos que comecam com 'Art' e terminam em mais de 2 espacos.
+    Valida se o trecho + cabecalho possuem as 3 frases chaves.
     """
     ocorrencias = []
     
-    palavras_estruturadas = ['remembramento', 'desmembramento']
-    palavras_comuns = [p for p in palavras_chave if p.lower() not in palavras_estruturadas]
+    # REGRA DE CORTE: Comeca em "Art" e captura tudo ate achar 3 ou mais espacos seguidos (\s{3,})
+    padrao_art = re.compile(r'\b(Art[\.\s].*?)(?=\s{3,}|\Z)', re.IGNORECASE | re.DOTALL)
     
-    # PASSO 1: PROCESSAR BLOCOS ESTRUTURADOS (Prioridade)
-    for palavra in palavras_estruturadas:
-        if palavra.lower() not in [p.lower() for p in palavras_chave]:
-            continue
+    for match in padrao_art.finditer(texto_sem_acento):
+        bloco_art_bruto = match.group(1)
+        
+        # Pega uma "janela" que inclui o texto antes do Artigo (para poder ler o cabecalho e o interessado)
+        inicio_janela = max(0, match.start() - 2000)
+        janela_validacao = texto_sem_acento[inicio_janela : match.end()]
+        janela_lower = janela_validacao.lower()
+        
+        # REGRA DE GATILHO DUPLO: Tem que ter as 3 frases no bloco analisado
+        tem_certidao = "certidao de remembramento" in janela_lower
+        tem_aprovado = "aprovado o remembramento" in janela_lower
+        tem_situacao = "situacao atual" in janela_lower
+        
+        if tem_certidao and tem_aprovado and tem_situacao:
             
-        for match in re.finditer(r'\b' + re.escape(palavra) + r'\b', texto, re.IGNORECASE):
-            texto_frente = texto[match.start() : match.start() + 2000]
-            
-            interessado = None
-            endereco = None
-            end_pos_bloco = match.end()
-            
-            # Busca Interessado
-            match_int = re.search(r'interesse\s+de\s+(.*?)(?:RESOLVE|Art\.)', texto_frente, re.IGNORECASE)
+            # 1. Extrai o Interessado (tudo que vem apos "interesse de" ou "interessado:" ate achar RESOLVE ou Art)
+            interessado = "Nao identificado"
+            match_int = re.search(r'(?:interesse\s+de|interessad[oa]s?[\s:]+)(.*?)(?:RESOLVE|\bArt\b)', janela_validacao, re.IGNORECASE | re.DOTALL)
             if match_int:
-                interessado = match_int.group(1).strip()
-                end_pos_bloco = max(end_pos_bloco, match.start() + match_int.end())
+                # Retira as quebras de linha de dentro do nome da empresa para ficar limpo
+                interessado = re.sub(r'\s+', ' ', match_int.group(1)).strip()
                 
-            # Busca Endereço (Atualizado com as preposições "à" e "em")
-            match_end = re.search(r'situados?(?:\s+n[ao]\(?s?\)?|\s+à|\s+em)\s+(.*?)(?:,\s*nesta capital|,\s*nesta cidade|,\s*objeto das)', texto_frente, re.IGNORECASE)
-            if match_end:
-                endereco = match_end.group(1).strip()
-                end_pos_bloco = max(end_pos_bloco, match.start() + match_end.end())
+            # 2. Limpa o trecho capturado para remover quebras de linha e apresentar como um paragrafo unico no Telegram
+            trecho_limpo = re.sub(r'\s+', ' ', bloco_art_bruto).strip()
             
-            if interessado or endereco:
-                ctx = f"🏢 <b>Interessado:</b> {interessado or 'Não identificado'}\n📍 <b>Endereço:</b> {endereco or 'Não identificado'}"
-                ocorrencias.append({
-                    'pagina': num_pagina,
-                    'start': match.start() - 200,
-                    'end': end_pos_bloco + 300,
-                    'texto_exibicao': ctx,
-                    'keywords': {palavra.upper()}
-                })
-            else:
-                # Se não achar a estrutura bonitinha, manda a palavra para a lista comum para extrair o contexto em volta
-                if palavra not in palavras_comuns:
-                    palavras_comuns.append(palavra)
-                    
-    # PASSO 2: PROCESSAR PALAVRAS COMUNS (Fallback ou palavras adicionais futuras)
-    for palavra in palavras_comuns:
-        for match in re.finditer(r'\b' + re.escape(palavra) + r'\b', texto, re.IGNORECASE):
-            centro_palavra = (match.start() + match.end()) / 2
-            ja_coberto = False
+            # Monta o contexto que sera enviado na mensagem
+            ctx = f"🏢 <b>Interessado:</b> {interessado}\n📄 <b>Trecho:</b> {trecho_limpo}"
             
-            for oc in ocorrencias:
-                if oc['start'] <= centro_palavra <= oc['end']:
-                    oc['keywords'].add(palavra.upper())
-                    ja_coberto = True
-                    break
+            ocorrencias.append({
+                'pagina': num_pagina,
+                'texto_exibicao': ctx
+            })
             
-            if not ja_coberto:
-                inicio_idx = max(0, match.start() - 400)
-                fim_idx = min(len(texto), match.end() + 400)
-                
-                while inicio_idx > 0 and texto[inicio_idx] not in [' ', '\n']:
-                    inicio_idx -= 1
-                while fim_idx < len(texto) and texto[fim_idx] not in [' ', '\n']:
-                    fim_idx += 1
-                    
-                trecho_bruto = texto[inicio_idx:fim_idx].strip()
-                ctx = f"...{trecho_bruto}..."
-                
-                ocorrencias.append({
-                    'pagina': num_pagina,
-                    'start': inicio_idx,
-                    'end': fim_idx,
-                    'texto_exibicao': ctx,
-                    'keywords': {palavra.upper()}
-                })
-
     return ocorrencias
 
 def main():
@@ -129,7 +96,7 @@ def main():
         response = requests.get(URL_DIARIOS, headers=headers)
         response.raise_for_status()
     except Exception as e:
-        print(f"Erro ao acessar a lista de diários: {e}")
+        print(f"Erro ao acessar a lista de diarios: {e}")
         return
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -142,7 +109,7 @@ def main():
             break
             
     if not link_pdf:
-        print("Nenhum link de diário encontrado na página.")
+        print("Nenhum link de diario encontrado na pagina.")
         return
         
     if link_pdf.startswith('/'):
@@ -156,10 +123,10 @@ def main():
         with open(ARQUIVO_CONTROLE, 'r') as f:
             ultimo_lido = f.read().strip()
         if url_pdf_completa == ultimo_lido:
-            print("Este diário já foi processado anteriormente. Encerrando.")
+            print("Este diario ja foi processado anteriormente. Encerrando.")
             return
 
-    print(f"Baixando novo Diário Oficial: {url_pdf_completa}")
+    print(f"Baixando novo Diario Oficial: {url_pdf_completa}")
 
     try:
         pdf_response = requests.get(url_pdf_completa, headers=headers)
@@ -178,33 +145,26 @@ def main():
             texto_extraido = page.extract_text()
             
             if texto_extraido:
-                texto_limpo = re.sub(r'\s+', ' ', texto_extraido).replace('<', '[').replace('>', ']')
+                # Passo fundamental: remover acentos antes de submeter a analise
+                texto_sem_acento = remover_acentos(texto_extraido)
                 
-                ocorrencias_pagina = extract_page_occurrences(texto_limpo, PALAVRAS_CHAVE, num_pagina)
+                ocorrencias_pagina = extrair_blocos_remembramento(texto_sem_acento, num_pagina)
                 if ocorrencias_pagina:
                     todas_ocorrencias.extend(ocorrencias_pagina)
                             
     except Exception as e:
-        print(f"Erro ao ler as páginas do PDF: {e}")
+        print(f"Erro ao ler as paginas do PDF: {e}")
         return
 
+    # Mensagens de alerta tambem geradas sem acento para garantir compatibilidade
     if todas_ocorrencias:
-        mensagem_final = f"🏛️ <b>Novo Diário Oficial Analisado!</b>\n"
-        mensagem_final += f"🔍 Encontrei <b>{len(todas_ocorrencias)}</b> blocos de informação relevantes.\n\n"
+        mensagem_final = f"🏛️ <b>Novo Diario Oficial Analisado!</b>\n"
+        mensagem_final += f"🔍 Encontrei <b>{len(todas_ocorrencias)}</b> certidoes de remembramento validadas.\n\n"
         mensagem_final += "========================\n\n"
         
         for i, oc in enumerate(todas_ocorrencias, 1):
-            termos_str = ", ".join(oc['keywords'])
-            mensagem_final += f"📌 <b>OCORRÊNCIA {i}</b> (Pág {oc['pagina']})\n"
-            mensagem_final += f"🏷️ <i>Termos mapeados: {termos_str}</i>\n\n"
-            
-            texto_final = oc['texto_exibicao']
-            
-            if not texto_final.startswith('🏢'):
-                for kw in oc['keywords']:
-                    texto_final = re.sub(r'\b(' + re.escape(kw) + r')\b', r'<b>\1</b>', texto_final, flags=re.IGNORECASE)
-                    
-            mensagem_final += f"{texto_final}\n\n"
+            mensagem_final += f"📌 <b>OCORRENCIA {i}</b> (Pag {oc['pagina']})\n"
+            mensagem_final += f"{oc['texto_exibicao']}\n\n"
             mensagem_final += "------------------------\n\n"
         
         mensagem_final += f"🔗 <b>Acessar PDF Completo:</b> <a href='{url_pdf_completa}'>Clique Aqui</a>"
@@ -212,8 +172,8 @@ def main():
         send_telegram_message(mensagem_final)
     else:
         mensagem_vazia = (
-            "🏛️ <b>Novo Diário Oficial Analisado!</b>\n"
-            "O diário de hoje foi lido, mas nenhum Remembramento ou Desmembramento apareceu.\n\n"
+            "🏛️ <b>Novo Diario Oficial Analisado!</b>\n"
+            "O diario de hoje foi lido, mas nenhum Remembramento com o padrao estabelecido foi encontrado.\n\n"
             f"🔗 <b>Acessar PDF:</b> <a href='{url_pdf_completa}'>Clique Aqui</a>"
         )
         send_telegram_message(mensagem_vazia)
@@ -226,4 +186,4 @@ if __name__ == "__main__":
     if TOKEN and CHAT_ID:
         main()
     else:
-        print("Erro: Variáveis de ambiente do Telegram não configuradas.")
+        print("Erro: Variaveis de ambiente do Telegram nao configuradas.")
