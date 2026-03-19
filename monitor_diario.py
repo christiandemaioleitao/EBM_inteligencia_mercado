@@ -119,4 +119,7 @@ def main():
         print(f"Erro geral: {e}")
 
 if __name__ == "__main__":
+
+    print(f"Texto extraído (primeiros 100 caracteres): {texto_diario[:100]}")
+    print(f"Resposta da IA: {analise}")
     main()
