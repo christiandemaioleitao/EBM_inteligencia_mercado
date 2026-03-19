@@ -23,7 +23,7 @@ GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 # Configuração da API do Gemini
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
 else:
     print("ERRO: Variável GOOGLE_API_KEY não configurada.")
     exit(1)
