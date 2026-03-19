@@ -2,16 +2,14 @@ name: Monitor do Diário Oficial de Goiânia
 
 on:
   schedule:
-    # 19:00 UTC equivale a 16:00 no Horário de Brasília
-    - cron: '0 19 * * *'
-  workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
+    - cron: '0 12 * * *' # Roda às 09h00 (Horário de Brasília)
+  workflow_dispatch:
 
 jobs:
-  analisa-pdf:
+  check-site:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Necessário para o bot conseguir dar 'git push' no arquivo de controle
-
+      contents: write # Essencial para o bot salvar o arquivo .txt
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
@@ -24,22 +22,19 @@ jobs:
       - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 pypdf google-generativeai
+          pip install requests beautifulsoup4 pypdf google-generativeai pandas lxml
 
-      - name: Rodar o leitor do Diário Oficial
+      - name: Rodar o script de monitoramento
         env:
-          # É altamente recomendável usar Secrets do GitHub em vez de colar aqui
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || '8742745705:AAERGnwZjSXNOKNR785v_fFM-PNm6GZQ3g8' }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '-1003531859481' }}
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY || 'AIzaSyCuR_KJaHuj2-j7IkQ4iDVou4CPkbGNH_Q' }}
-        run: python monitor_diario.py
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: python monitor.py # Certifique-se de que o nome do arquivo seja monitor.py
 
-      - name: Salvar o controle do último diário lido
+      - name: Commitar base de dados atualizada
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          # Cria o arquivo caso ele não exista para evitar erro no git add
-          touch ultimo_diario.txt 
+          # Adiciona tanto o .txt quanto um possível .csv se você usar
           git add ultimo_diario.txt
-          # Só faz commit se houver alteração no arquivo
-          git diff --staged --quiet || (git commit -m "bot: registra ultimo diario lido" && git pull --rebase && git push)
+          git diff --staged --quiet || (git commit -m "bot: atualiza controle de leitura" && git push)
