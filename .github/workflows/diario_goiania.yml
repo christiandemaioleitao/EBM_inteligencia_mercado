@@ -4,11 +4,14 @@ on:
   schedule:
     # 19:00 UTC equivale a 16:00 no Horário de Brasília
     - cron: '0 19 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
 
 jobs:
   analisa-pdf:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Necessário para o bot conseguir dar 'git push' no arquivo de controle
+
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
@@ -18,24 +21,25 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Instalar dependências (pypdf para leitura de PDF)
-        run: pip install requests beautifulsoup4 pypdf
-            python -m pip install --upgrade pip
-            pip install google-generativeai requests beautifulsoup4 pypdf
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pypdf google-generativeai
 
       - name: Rodar o leitor do Diário Oficial
         env:
-          # Credenciais inseridas diretamente
-          TELEGRAM_TOKEN: '8742745705:AAERGnwZjSXNOKNR785v_fFM-PNm6GZQ3g8'
-          TELEGRAM_CHAT_ID: '-1003531859481'
-          GOOGLE_API_KEY: 'AIzaSyCuR_KJaHuj2-j7IkQ4iDVou4CPkbGNH_Q'
+          # É altamente recomendável usar Secrets do GitHub em vez de colar aqui
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || '8742745705:AAERGnwZjSXNOKNR785v_fFM-PNm6GZQ3g8' }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || '-1003531859481' }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY || 'AIzaSyCuR_KJaHuj2-j7IkQ4iDVou4CPkbGNH_Q' }}
         run: python monitor_diario.py
 
       - name: Salvar o controle do último diário lido
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          # Cria o arquivo caso ele não exista para evitar erro no git add
+          touch ultimo_diario.txt 
           git add ultimo_diario.txt
-          git diff --quiet && git diff --staged --quiet || git commit -m "bot: registra ultimo diario lido"
-          git pull --rebase
-          git push
+          # Só faz commit se houver alteração no arquivo
+          git diff --staged --quiet || (git commit -m "bot: registra ultimo diario lido" && git pull --rebase && git push)
