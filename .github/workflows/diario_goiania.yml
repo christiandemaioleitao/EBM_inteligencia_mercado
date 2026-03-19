@@ -20,12 +20,15 @@ jobs:
 
       - name: Instalar dependências (pypdf para leitura de PDF)
         run: pip install requests beautifulsoup4 pypdf
+            python -m pip install --upgrade pip
+            pip install google-generativeai requests beautifulsoup4 pypdf
 
       - name: Rodar o leitor do Diário Oficial
         env:
           # Credenciais inseridas diretamente
           TELEGRAM_TOKEN: '8742745705:AAERGnwZjSXNOKNR785v_fFM-PNm6GZQ3g8'
           TELEGRAM_CHAT_ID: '-1003531859481'
+          GOOGLE_API_KEY: 'AIzaSyCuR_KJaHuj2-j7IkQ4iDVou4CPkbGNH_Q'
         run: python monitor_diario.py
 
       - name: Salvar o controle do último diário lido
