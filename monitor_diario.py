@@ -1,189 +1,154 @@
 import os
-import re
 import requests
 import io
-import unicodedata
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
+import google.generativeai as genai
 
 # ==========================================
-# CONFIGURACOES
+# CONFIGURAÇÕES E AMBIENTE
 # ==========================================
 URL_BASE = "https://www.goiania.go.gov.br"
+# URL para 2026 conforme original, ajuste se necessário
 URL_DIARIOS = "https://www.goiania.go.gov.br/shtml//portal/casacivil/lista_diarios.asp?ano=2026"
-
 ARQUIVO_CONTROLE = "ultimo_diario.txt"
 
-TOKEN = os.environ.get('TELEGRAM_TOKEN')
-CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
-# ==========================================
+# Variáveis de Ambiente
+TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+TELEGRAM_CHAT_ID = os.environ.get('TELEGRAM_CHAT_ID')
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 
-def remover_acentos(texto):
-    """Remove todos os acentos do texto (ex: à->a, ç->c, ã->a)"""
-    if not texto:
-        return ""
-    # Transforma os caracteres e ignora/remove os acentos
-    return unicodedata.normalize('NFKD', str(texto)).encode('ASCII', 'ignore').decode('utf-8')
+# Configuração do Gemini
+if GOOGLE_API_KEY:
+    genai.configure(api_key="AIzaSyCuR_KJaHuj2-j7IkQ4iDVou4CPkbGNH_Q")
+    # Usando o Flash por ser mais rápido e barato para resumos
+    model = genai.GenerativeModel('gemini-1.5-flash')
+else:
+    print("ERRO: Variável GOOGLE_API_KEY não configurada.")
+    exit(1)
+
+# ==========================================
+# SEU PROMPT PERSONALIZADO
+# ==========================================
+# Defina aqui exatamente o que você quer que a IA faça com o texto.
+# Exemplo focado no objetivo original (Remembramento), mas flexível.
+PROMPT_IA = """
+Analise o texto completo do Diário Oficial fornecido abaixo.
+Seu objetivo é identificar e listar todas as ocorrências de 'Certidões de Remembramento'.
+
+Para cada ocorrência encontrada, extraia estritamente:
+1. O nome do Interessado (empresa ou pessoa).
+2. O endereço ou localização do imóvel referenciado.
+3. Um resumo muito breve (1 frase) do que foi decidido (ex: Aprovado, Indeferido).
+
+Formate a resposta em HTML para o Telegram, usando <b> para títulos e <i> para o conteúdo, como no exemplo:
+🏢 <b>Interessado:</b> <i>Nome da Empresa LTDA</i>
+📍 <b>Local:</b> <i>Rua X, Qd Y, Goiânia</i>
+📝 <b>Decisão:</b> <i>Remembramento Aprovado.</i>
+------------------------
+
+Se não encontrar NENHUMA certidão de remembramento, responda apenas: "Nenhum remembramento encontrado."
+Não invente dados. Se não encontrar uma informação específica (como o local), pule-a.
+
+TEXTO DO DIÁRIO OFICIAL:
+---
+"""
 
 def send_telegram_message(text):
-    """Envia a mensagem para o Telegram"""
-    url_api = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    """Envia a mensagem para o Telegram suportando HTML e mensagens longas."""
+    if not text: return
     
-    # Textos já estão sem acento, o que evita o corrompimento no envio
+    url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    
+    # Divide a mensagem se for maior que o limite do Telegram (4096 chars)
     partes = [text[i:i+4000] for i in range(0, len(text), 4000)]
     
     for parte in partes:
-        payload = {"chat_id": CHAT_ID, "text": parte, "parse_mode": "HTML"}
-        resposta = requests.post(url_api, json=payload)
-        
-        if resposta.status_code != 200:
-            print(f"ERRO DO TELEGRAM: {resposta.text}")
-            texto_puro = parte.replace('<b>', '').replace('</b>', '').replace('<i>', '').replace('</i>', '').replace('<a href=', '').replace('</a>', '')
-            payload_seguro = {"chat_id": CHAT_ID, "text": "[Modo Texto Puro]\n\n" + texto_puro}
-            requests.post(url_api, json=payload_seguro)
-        else:
-            print("Mensagem enviada com sucesso pro Telegram!")
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": parte, "parse_mode": "HTML"}
+        try:
+            requests.post(url_api, json=payload, timeout=30)
+        except Exception as e:
+            print(f"Erro ao enviar para Telegram: {e}")
 
-def extrair_blocos_remembramento(texto_sem_acento, num_pagina):
-    """
-    Busca os trechos que comecam com 'Art' e terminam em mais de 2 espacos.
-    Valida se o trecho + cabecalho possuem as 3 frases chaves.
-    """
-    ocorrencias = []
-    
-    # REGRA DE CORTE: Comeca em "Art" e captura tudo ate achar 3 ou mais espacos seguidos (\s{3,})
-    padrao_art = re.compile(r'\b(Art[\.\s].*?)(?=\s{3,}|\Z)', re.IGNORECASE | re.DOTALL)
-    
-    for match in padrao_art.finditer(texto_sem_acento):
-        bloco_art_bruto = match.group(1)
-        
-        # Pega uma "janela" que inclui o texto antes do Artigo (para poder ler o cabecalho e o interessado)
-        inicio_janela = max(0, match.start() - 2000)
-        janela_validacao = texto_sem_acento[inicio_janela : match.end()]
-        janela_lower = janela_validacao.lower()
-        
-        # REGRA DE GATILHO DUPLO: Tem que ter as 3 frases no bloco analisado
-        tem_certidao = "certidao de remembramento" in janela_lower
-        tem_aprovado = "aprovado o remembramento" in janela_lower
-        tem_situacao = "situacao atual" in janela_lower
-        
-        if tem_certidao and tem_aprovado and tem_situacao:
-            
-            # 1. Extrai o Interessado (tudo que vem apos "interesse de" ou "interessado:" ate achar RESOLVE ou Art)
-            interessado = "Nao identificado"
-            match_int = re.search(r'(?:interesse\s+de|interessad[oa]s?[\s:]+)(.*?)(?:RESOLVE|\bArt\b)', janela_validacao, re.IGNORECASE | re.DOTALL)
-            if match_int:
-                # Retira as quebras de linha de dentro do nome da empresa para ficar limpo
-                interessado = re.sub(r'\s+', ' ', match_int.group(1)).strip()
-                
-            # 2. Limpa o trecho capturado para remover quebras de linha e apresentar como um paragrafo unico no Telegram
-            trecho_limpo = re.sub(r'\s+', ' ', bloco_art_bruto).strip()
-            
-            # Monta o contexto que sera enviado na mensagem
-            ctx = f"🏢 <b>Interessado:</b> {interessado}\n📄 <b>Trecho:</b> {trecho_limpo}"
-            
-            ocorrencias.append({
-                'pagina': num_pagina,
-                'texto_exibicao': ctx
-            })
-            
-    return ocorrencias
+def extrair_texto_pdf(pdf_content):
+    """Extrai todo o texto de um PDF em memória."""
+    texto_completo = ""
+    try:
+        pdf_file = io.BytesIO(pdf_content)
+        reader = PdfReader(pdf_file)
+        for page in reader.pages:
+            texto_completo += page.extract_text() + "\n\n"
+    except Exception as e:
+        print(f"Erro ao ler PDF: {e}")
+    return texto_completo
 
 def main():
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    headers = {'User-Agent': 'Mozilla/5.0'}
     
+    # 1. Busca link do diário mais recente
     try:
-        response = requests.get(URL_DIARIOS, headers=headers)
+        response = requests.get(URL_DIARIOS, headers=headers, timeout=30)
         response.raise_for_status()
     except Exception as e:
-        print(f"Erro ao acessar a lista de diarios: {e}")
-        return
+        print(f"Erro ao acessar lista: {e}"); return
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    
     link_pdf = None
     for a in soup.find_all('a', href=True):
         href = a['href']
-        if 'pdf' in href.lower() or 'diario' in href.lower() or 'download' in href.lower() or 'exibe' in href.lower():
-            link_pdf = href
-            break
+        if 'pdf' in href.lower() or 'diario' in href.lower():
+            link_pdf = href; break
             
     if not link_pdf:
-        print("Nenhum link de diario encontrado na pagina.")
-        return
+        print("Nenhum PDF encontrado."); return
         
-    if link_pdf.startswith('/'):
-        url_pdf_completa = URL_BASE + link_pdf
-    elif not link_pdf.startswith('http'):
-        url_pdf_completa = URL_BASE + "/shtml//portal/casacivil/" + link_pdf
-    else:
-        url_pdf_completa = link_pdf
+    url_pdf_completa = requests.compat.urljoin(URL_BASE, link_pdf)
 
+    # 2. Controle de duplicidade
     if os.path.exists(ARQUIVO_CONTROLE):
         with open(ARQUIVO_CONTROLE, 'r') as f:
-            ultimo_lido = f.read().strip()
-        if url_pdf_completa == ultimo_lido:
-            print("Este diario ja foi processado anteriormente. Encerrando.")
-            return
+            if url_pdf_completa == f.read().strip():
+                print("Diário já processado."); return
 
-    print(f"Baixando novo Diario Oficial: {url_pdf_completa}")
+    print(f"Processando novo Diário: {url_pdf_completa}")
 
+    # 3. Baixa e Extrai Texto
     try:
-        pdf_response = requests.get(url_pdf_completa, headers=headers)
+        pdf_response = requests.get(url_pdf_completa, headers=headers, timeout=60)
         pdf_response.raise_for_status()
+        texto_diario = extrair_texto_pdf(pdf_response.content)
     except Exception as e:
-        print(f"Erro ao baixar o PDF: {e}")
+        print(f"Erro no download/extração: {e}"); return
+
+    if not texto_diario.strip():
+        send_telegram_message("⚠️ Novo diário encontrado, mas não foi possível extrair texto do PDF.")
         return
-        
-    todas_ocorrencias = []
-    
+
+    # 4. Envia para a IA analisar
+    print("Enviando texto para análise da IA (isso pode demorar)...")
     try:
-        pdf_file = io.BytesIO(pdf_response.content)
-        reader = PdfReader(pdf_file)
+        # Junta o prompt configurado com o texto bruto do PDF
+        prompt_final = f"{PROMPT_IA}\n\n{texto_diario}"
         
-        for num_pagina, page in enumerate(reader.pages, start=1):
-            texto_extraido = page.extract_text()
-            
-            if texto_extraido:
-                # Passo fundamental: remover acentos antes de submeter a analise
-                texto_sem_acento = remover_acentos(texto_extraido)
-                
-                ocorrencias_pagina = extrair_blocos_remembramento(texto_sem_acento, num_pagina)
-                if ocorrencias_pagina:
-                    todas_ocorrencias.extend(ocorrencias_pagina)
-                            
+        # O Gemini 1.5 Flash suporta 1 milhão de tokens, cabe qualquer Diário.
+        response = model.generate_content(prompt_final)
+        analise_ia = response.text
     except Exception as e:
-        print(f"Erro ao ler as paginas do PDF: {e}")
-        return
+        analise_ia = f"❌ Erro na análise da IA: {e}"
 
-    # Mensagens de alerta tambem geradas sem acento para garantir compatibilidade
-    if todas_ocorrencias:
-        mensagem_final = f"🏛️ <b>Novo Diario Oficial Analisado!</b>\n"
-        mensagem_final += f"🔍 Encontrei <b>{len(todas_ocorrencias)}</b> certidoes de remembramento validadas.\n\n"
-        mensagem_final += "========================\n\n"
-        
-        for i, oc in enumerate(todas_ocorrencias, 1):
-            mensagem_final += f"📌 <b>OCORRENCIA {i}</b> (Pag {oc['pagina']})\n"
-            mensagem_final += f"{oc['texto_exibicao']}\n\n"
-            mensagem_final += "------------------------\n\n"
-        
-        mensagem_final += f"🔗 <b>Acessar PDF Completo:</b> <a href='{url_pdf_completa}'>Clique Aqui</a>"
-            
-        send_telegram_message(mensagem_final)
-    else:
-        mensagem_vazia = (
-            "🏛️ <b>Novo Diario Oficial Analisado!</b>\n"
-            "O diario de hoje foi lido, mas nenhum Remembramento com o padrao estabelecido foi encontrado.\n\n"
-            f"🔗 <b>Acessar PDF:</b> <a href='{url_pdf_completa}'>Clique Aqui</a>"
-        )
-        send_telegram_message(mensagem_vazia)
+    # 5. Formata Mensagem Final e Envia
+    cabecalho = f"🏛️ <b>Análise Inteligente do Diário Oficial</b>\n"
+    cabecalho += f"🔗 <a href='{url_pdf_completa}'>Acessar PDF Completo</a>\n"
+    cabecalho += "========================\n\n"
+    
+    send_telegram_message(cabecalho + analise_ia)
 
-    with open(ARQUIVO_CONTROLE, 'w') as f:
-        f.write(url_pdf_completa)
-    print("Arquivo de controle atualizado.")
+    # 6. Atualiza controle
+    with open(ARQUIVO_CONTROLE, 'w') as f: f.write(url_pdf_completa)
+    print("Concluído.")
 
 if __name__ == "__main__":
-    if TOKEN and CHAT_ID:
+    if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         main()
     else:
-        print("Erro: Variaveis de ambiente do Telegram nao configuradas.")
+        print("Erro: Variáveis do Telegram não configuradas.")
