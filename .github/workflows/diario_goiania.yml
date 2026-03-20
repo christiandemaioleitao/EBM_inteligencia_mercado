@@ -2,8 +2,13 @@ name: Monitor do Diário Oficial de Goiânia
 
 on:
   schedule:
-    - cron: '0 12,15,18 * * *' # 09h, 12h e 15h (Horário de Brasília)
-  workflow_dispatch:
+    # 09:17 Horário de Brasília
+    - cron: '17 12 * * *' 
+    # 12:13 Horário de Brasília
+    - cron: '13 15 * * *' 
+    # 15:09 Horário de Brasília
+    - cron: '9 18 * * *'  
+  workflow_dispatch: # Permite rodar manualmente para testar
   
 jobs:
   check-site:
