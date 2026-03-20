@@ -17,49 +17,45 @@ GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY')
 
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-2.5-flash')
+    model = genai.GenerativeModel('gemini-1.5-flash') # Use a versão estável disponível
 else:
     print("ERRO: GOOGLE_API_KEY não configurada.")
     exit(1)
 
+# PROMPT REFINADO: Menos restritivo para evitar o erro do "VAZIO" em projetos reais
 PROMPT_BASE = """
-Analise a página do sistema Alvará Fácil da Prefeitura de Goiânia fornecida abaixo e elabore um resumo completo do empreendimento formatado para envio pelo WhatsApp, incluindo:
+Analise os dados extraídos do sistema Alvará Fácil da Prefeitura de Goiânia abaixo.
+Sua tarefa é extrair os detalhes do empreendimento para um relatório imobiliário.
 
-- Número do projeto e situação atual
-- Licença prévia e data de pagamento da taxa inicial
-- Dados do proprietário (nome, CNPJ/CPF, tipo pessoa)
-- Localização completa (endereço, setor, IPTU, área do terreno)
-- Dados do projeto (tipo de uso, HIS, quantidade de unidades, número de pavimentos, descrição dos pavimentos, área a ser construída, analista responsável)
-- Vagas atendidas (comercial e habitação/visitante, incluindo PCD)
-- Responsáveis técnicos (nome e CAE)
-- Histórico resumido dos andamentos com as datas mais relevantes (abertura, análises, resultado final)
-- Status dos anexos relevantes
+DADOS DESEJADOS:
+- Número do projeto e situação atual.
+- Dados do proprietário e localização (Setor, Endereço, IPTU).
+- Características Técnicas: Área do terreno, pavimentos, unidades, analista.
+- Histórico: Datas de abertura e despachos mais relevantes.
 
-Use formatação com emojis e negrito (*texto*) compatível com WhatsApp.
-Coloque o link da página ao final do texto.
-
-REGRA MUITO IMPORTANTE: Se o texto abaixo não contiver as informações mínimas de um alvará, responda APENAS com a palavra: VAZIO
-
----
-TEXTO DA PÁGINA:
+REGRAS DE RESPOSTA:
+1. Se encontrar QUALQUER dado útil (mesmo que incompleto), elabore o resumo com o que houver.
+2. Use emojis e negrito (*texto*) para leitura fácil no WhatsApp/Telegram.
+3. Se a página estiver TOTALMENTE sem dados de projeto ou for apenas uma tela de erro do sistema, responda APENAS: VAZIO
 """
 
 def carregar_enviados():
     if not os.path.exists(ARQUIVO_CONTROLE):
         return set()
-    with open(ARQUIVO_CONTROLE, 'r') as f:
+    with open(ARQUIVO_CONTROLE, 'r', encoding='utf-8') as f:
         return set(line.strip() for line in f if line.strip())
 
 def salvar_enviado(projeto_id):
-    with open(ARQUIVO_CONTROLE, 'a') as f:
+    with open(ARQUIVO_CONTROLE, 'a', encoding='utf-8') as f:
         f.write(f"{projeto_id}\n")
 
 def send_telegram_message(text):
     if not text: return
     url_api = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    # Quebra de mensagens longas (limite Telegram ~4096 chars)
     partes = [text[i:i+4000] for i in range(0, len(text), 4000)]
     for parte in partes:
-        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": parte}
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": parte, "parse_mode": "Markdown"}
         try:
             requests.post(url_api, json=payload, timeout=30)
         except Exception as e:
@@ -67,7 +63,15 @@ def send_telegram_message(text):
 
 def main():
     enviados = carregar_enviados()
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    
+    # HEADERS AVANÇADOS: Simula um navegador real para evitar bloqueios e garantir o render inicial
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Referer': 'https://www10.goiania.go.gov.br/alvarafacil/',
+        'Connection': 'keep-alive'
+    }
 
     erros_consecutivos = 0
     print(f"Iniciando varredura do ID {ID_INICIAL} ao {ID_FINAL}...")
@@ -78,49 +82,61 @@ def main():
             continue
 
         url = f"https://www10.goiania.go.gov.br/alvarafacil/AcompanhaAprovacaoProjeto.aspx?ProjetoId={projeto_id}&TipoAlvara=2"
-        print(f"Analisando Projeto {projeto_id}...")
+        print(f"Lendo Projeto {projeto_id}...")
 
         try:
             res = requests.get(url, headers=headers, timeout=20)
+            res.raise_for_status() # Garante que a requisição foi 200 OK
+            
             soup = BeautifulSoup(res.text, 'html.parser')
 
-            # --- TRIAGEM PRÉVIA ---
+            # --- TRIAGEM DE CONTEÚDO ---
+            # Tenta focar no container principal do sistema para ignorar menus e rodapés
+            conteudo = soup.find(id="GoianiaTheme_wt8_block_wtMainContent")
+            if not conteudo:
+                conteudo = soup # Se não achar o ID, pega a página toda como fallback
+            
+            # Checagem de erro interno no título da prefeitura
             elemento_titulo = soup.find(id="GoianiaTheme_wt8_block_wtTitle")
             if elemento_titulo and "Erro Interno" in elemento_titulo.get_text():
                 erros_consecutivos += 1
-                print(f"⚠️ Erro Interno detectado (Consecutivos: {erros_consecutivos})")
-
+                print(f"⚠️ Erro Interno no ID {projeto_id} (Consecutivos: {erros_consecutivos})")
                 if erros_consecutivos >= 5:
-                    msg_alerta = "🛑 Aviso: Execução do bot interrompida. Foram detectados 5 links seguidos com 'Erro Interno' no site da Prefeitura."
-                    send_telegram_message(msg_alerta)
-                    print("Limite de erros consecutivos atingido. Encerrando o script.")
+                    send_telegram_message("🛑 Bot interrompido: Muitos erros seguidos no site da Prefeitura.")
                     break
-
-                time.sleep(2)
                 continue
 
-            # Reset de erros
             erros_consecutivos = 0
+            texto_limpo = conteudo.get_text(separator='\n', strip=True)
+            
+            # Validação básica de tamanho (se vier quase nada de texto, a página não carregou)
+            if len(texto_limpo) < 200:
+                print(f"Projeto {projeto_id} parece estar vazio ou não carregou.")
+                continue
 
-            texto_pagina = soup.get_text(separator='\n', strip=True)
-            prompt_final = f"{PROMPT_BASE}\n{texto_pagina}\n\nLink: {url}"
+            prompt_final = f"{PROMPT_BASE}\n--- TEXTO DA PÁGINA ---\n{texto_limpo}\n\nLink: {url}"
 
-            resposta_ia = model.generate_content(prompt_final).text.strip()
+            # Chamada da IA
+            response = model.generate_content(prompt_final)
+            resposta_ia = response.text.strip()
 
-            if resposta_ia == "VAZIO":
-                print(f"Projeto {projeto_id} ignorado pela IA (sem dados).")
+            # Lógica de verificação: Se a IA respondeu VAZIO e o texto for curto, ignoramos.
+            if "VAZIO" in resposta_ia.upper() and len(resposta_ia) < 15:
+                print(f"Projeto {projeto_id} ignorado pela IA (sem dados relevantes).")
             else:
                 send_telegram_message(resposta_ia)
                 salvar_enviado(projeto_id)
-                print(f"✅ Resumo do Projeto {projeto_id} enviado com sucesso!")
+                print(f"✅ Projeto {projeto_id} enviado com sucesso!")
 
         except Exception as e:
-            print(f"❌ Erro ao processar o projeto {projeto_id}: {e}")
-        time.sleep(4) 
+            print(f"❌ Erro crítico no projeto {projeto_id}: {e}")
+        
+        # Delay amigável para não ser bloqueado (WAF)
+        time.sleep(5) 
 
     print("Varredura concluída!")
-
-    # Salva o histórico no GitHub
+    
+    # Automação do Git para o GitHub Actions
     os.system('git config --global user.name "github-actions[bot]"')
     os.system('git config --global user.email "github-actions[bot]@users.noreply.github.com"')
     os.system(f'git add {ARQUIVO_CONTROLE}')
