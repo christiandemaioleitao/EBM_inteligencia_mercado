@@ -2,9 +2,9 @@ name: Monitor do Diário Oficial de Goiânia
 
 on:
   schedule:
-    - cron: '0 12 * * *' # Roda às 09h00 (Horário de Brasília)
+    - cron: '0 12,15,18 * * *' # 09h, 12h e 15h (Horário de Brasília)
   workflow_dispatch:
-
+  
 jobs:
   check-site:
     runs-on: ubuntu-latest
