@@ -7,8 +7,8 @@ from google import genai
 # ==========================================
 # CONFIGURAÇÕES
 # ==========================================
-ID_INICIAL = 49250
-ID_FINAL = 49270
+ID_INICIAL = 19474
+ID_FINAL = 419476
 ARQUIVO_CONTROLE = "projetos_enviados.txt"
 
 TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
