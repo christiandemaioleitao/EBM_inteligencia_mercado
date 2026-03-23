@@ -9,6 +9,7 @@ on:
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
+        timeout-minutes: 30
     permissions:
       contents: write 
     steps:
@@ -23,7 +24,7 @@ jobs:
       - name: Instalar Dependências
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 google-genai
+          pip install requests beautifulsoup4 google-genai google-api-core
 
       - name: Executar Monitor de Alvarás
         env:
