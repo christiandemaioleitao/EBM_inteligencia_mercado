@@ -2,16 +2,16 @@ name: Monitor Alvará Fácil Goiânia
 
 on:
   schedule:
-    - cron: '17 11 * * *' # 08:17 Brasília
+    - cron: '17 11 * * *'  # 08:17 Brasília
 
   workflow_dispatch:
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
-        timeout-minutes: 30
+    timeout-minutes: 30
     permissions:
-      contents: write 
+      contents: write
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
