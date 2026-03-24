@@ -99,6 +99,7 @@ def extrair_dados_projeto(projeto_id, session):
                 res = tree.xpath(f"//label[normalize-space()='{label_text}']/../text()")
             return res[0].strip() if res else "Não Informado"
 
+        
         dados['Número'] = get_label_text("Número")
         dados['Tipo'] = get_label_text("Tipo")
         dados['Situação'] = get_label_text("Situação")
