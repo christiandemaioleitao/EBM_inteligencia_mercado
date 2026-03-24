@@ -5,13 +5,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import os
 import json
-import sys  # Adicionado para permitir o encerramento do script
 
 # ==============================================================================
 #                          ÁREA DE CONTROLE (CONFIGURAÇÕES)
 # ==============================================================================
-PROJETO_INICIO = 49436
-PROJETO_FIM = 49450
+PROJETO_INICIO = 43532
+PROJETO_FIM = 43535
 MAX_WORKERS = 15
 TIMEOUT_REQUEST = 25
 BASE_URL = "https://www10.goiania.go.gov.br/alvarafacil/AcompanhaAprovacaoProjeto.aspx"
@@ -35,6 +34,7 @@ O resumo deve conter:
 - Localização e área do terreno
 - Porte da obra (pavimentos, unidades, áreas)
 - Responsáveis (autor, proprietário, incorporador se houver)
+- Data do protocolo do projeto (primeira data) e a data da ultima movimentação e quero que você calcule o tempo decorrido em dias (caso o tempo seja inferior a 31 dias) e em meses (caso o tempo seja igual ou superior a 31 dias)
 - Qualquer observação relevante
 
 Dados do projeto:
@@ -187,9 +187,11 @@ def executar_varredura(inicio, fim):
     resultados_brutos.sort(key=lambda x: x.get('ID Projeto', 0))
 
     # ==============================================================================
-    #                      VERIFICAÇÃO DE REGRA (IGNORAR / ENCERRAR)
+    #                      VERIFICAÇÃO DE REGRA (CORTAR A FILA)
     # ==============================================================================
+    projetos_validados = []
     falhas_seguidas = 0
+    
     for dados in resultados_brutos:
         tipo = dados.get('Tipo', 'Não Informado')
         numero = dados.get('Número', 'Não Informado')
@@ -197,14 +199,19 @@ def executar_varredura(inicio, fim):
         if tipo == 'Não Informado' or numero == 'Não Informado':
             falhas_seguidas += 1
             dados['Ignorar'] = True
+            projetos_validados.append(dados)
             
             if falhas_seguidas >= 3:
-                print(f"\n🛑 ALERTA CRÍTICO: 3 projetos seguidos com Tipo ou Nº 'Não Informado'.")
-                print("🛑 Encerrando a execução do script imediatamente conforme configurado.")
-                sys.exit(0)  # Mata o script completamente aqui
+                print(f"\n🛑 ALERTA: 3 projetos seguidos com Tipo ou Nº 'Não Informado'.")
+                print("🛑 Cortando a fila de processamento. Os projetos válidos anteriores serão enviados.")
+                break  # Sai do loop e ignora o restante dos IDs extraídos
         else:
             falhas_seguidas = 0
             dados['Ignorar'] = False
+            projetos_validados.append(dados)
+            
+    # Atualiza a lista para conter apenas os projetos até o momento do corte
+    resultados_brutos = projetos_validados
     # ==============================================================================
 
     print(f"\n---> ETAPA 2/2: Resumos via Groq ({GROQ_MODEL})...")
@@ -236,7 +243,7 @@ def montar_mensagens_telegram(dados_brutos, resumos, inicio, fim):
     agora = time.strftime('%d/%m/%Y %H:%M')
     mensagens = []
     
-    cabecalho = f"<b>📊 ALVARÁS GOIÂNIA — IDs {inicio} a {fim}</b>\n<i>{agora}</i>"
+    cabecalho = f"<b>📊 ALVARÁS GOIÂNIA — Processamento de IDs</b>\n<i>{agora}</i>"
     mensagens.append(cabecalho)
 
     for dados in dados_brutos:
@@ -267,7 +274,7 @@ def montar_mensagens_telegram(dados_brutos, resumos, inicio, fim):
 def montar_texto_console(dados_brutos, resumos, inicio, fim):
     linhas = [
         "=" * 60,
-        f"  RESUMOS DE PROJETOS — IDs {inicio} a {fim}",
+        f"  RESUMOS DE PROJETOS",
         f"  Gerado em: {time.strftime('%d/%m/%Y %H:%M:%S')}",
         "=" * 60
     ]
@@ -319,7 +326,7 @@ if __name__ == "__main__":
             print(f"   - {e}")
         if not GROQ_API_KEY:
             print("\n❌ Sem GROQ_API_KEY não é possível continuar. Abortando.")
-            sys.exit(1)
+            exit(1)
         print("\n⚠️  Continuando sem Telegram...\n")
 
     print(f"\n📌 Intervalo: Projeto {PROJETO_INICIO} ao {PROJETO_FIM}")
