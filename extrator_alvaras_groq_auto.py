@@ -9,29 +9,21 @@ import json
 # ==============================================================================
 #                          ÁREA DE CONTROLE (CONFIGURAÇÕES)
 # ==============================================================================
-# 1. Intervalo de projetos (preencha aqui)
-PROJETO_INICIO = 43532
-PROJETO_FIM = 43533
-
-# 2. Performance
+PROJETO_INICIO = 1
+PROJETO_FIM = 10
 MAX_WORKERS = 15
-
-# 3. Conexão
 TIMEOUT_REQUEST = 25
 BASE_URL = "https://www10.goiania.go.gov.br/alvarafacil/AcompanhaAprovacaoProjeto.aspx"
 TIPO_ALVARA = 2
 
-# 4. Identificação
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
 
-# 5. Groq API (configure via variável de ambiente ou GitHub Secrets)
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = "llama-3.3-70b-versatile"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-# 6. Telegram (configure via variável de ambiente ou GitHub Secrets)
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
@@ -53,40 +45,37 @@ Responda APENAS com o texto do resumo, sem títulos ou formatação extra."""
 #                               FIM DA CONFIGURAÇÃO
 # ==============================================================================
 
+def escape_tg_html(text):
+    """Escapa caracteres que quebram o parse_mode='HTML' rigoroso do Telegram."""
+    return str(text).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
-def enviar_telegram(texto):
-    """Envia uma mensagem para o canal/grupo do Telegram."""
+def enviar_mensagens_telegram(mensagens):
+    """Envia uma lista de mensagens individualmente para contornar limites de tamanho e formatação."""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️  Telegram não configurado. Pulando envio.")
         return False
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-
-    # Telegram tem limite de 4096 caracteres por mensagem
-    MAX_MSG = 4000
-    partes = [texto[i:i + MAX_MSG] for i in range(0, len(texto), MAX_MSG)]
-
-    for i, parte in enumerate(partes):
+    
+    for i, msg in enumerate(mensagens):
         payload = {
             "chat_id": TELEGRAM_CHAT_ID,
-            "text": parte,
+            "text": msg,
             "parse_mode": "HTML",
             "disable_web_page_preview": True
         }
         try:
             resp = requests.post(url, json=payload, timeout=15)
             if resp.status_code == 200:
-                print(f"  ✅ Telegram: parte {i+1}/{len(partes)} enviada")
+                print(f"  ✅ Telegram: Mensagem {i+1}/{len(mensagens)} enviada")
             else:
                 print(f"  ❌ Telegram erro {resp.status_code}: {resp.text[:200]}")
-                return False
-            if i < len(partes) - 1:
-                time.sleep(1)
         except Exception as e:
-            print(f"  ❌ Telegram erro: {e}")
-            return False
+            print(f"  ❌ Telegram erro na conexão: {e}")
+        
+        # Pausa de 2 segundos para respeitar o Rate Limit do Telegram (evitar bloqueio)
+        time.sleep(2)
     return True
-
 
 def extrair_dados_projeto(projeto_id, session):
     url = f'{BASE_URL}?ProjetoId={projeto_id}&TipoAlvara={TIPO_ALVARA}'
@@ -139,9 +128,7 @@ def extrair_dados_projeto(projeto_id, session):
     except Exception as e:
         return {'ID Projeto': projeto_id, 'Status': f'Erro: {str(e)}'}
 
-
 def gerar_resumo_groq(dados_projeto):
-    """Envia os dados de um projeto para a API do Groq e retorna o resumo."""
     projeto_id = dados_projeto.get('ID Projeto', '?')
 
     if dados_projeto.get('Status') != 'Sucesso':
@@ -178,7 +165,6 @@ def gerar_resumo_groq(dados_projeto):
     except Exception as e:
         return projeto_id, f"[Projeto {projeto_id}] Erro Groq: {str(e)}"
 
-
 def executar_varredura(inicio, fim):
     lista_ids = range(inicio, fim + 1)
     total = len(lista_ids)
@@ -214,41 +200,36 @@ def executar_varredura(inicio, fim):
 
     return resultados_brutos, resumos
 
-
-def montar_texto_telegram(dados_brutos, resumos, inicio, fim):
-    """Monta o texto formatado em HTML para o Telegram."""
+def montar_mensagens_telegram(dados_brutos, resumos, inicio, fim):
+    """Monta mensagens separadas para evitar quebra de HTML e limite de caracteres."""
     agora = time.strftime('%d/%m/%Y %H:%M')
-    linhas = [
-        f"<b>📊 ALVARÁS GOIÂNIA — IDs {inicio} a {fim}</b>",
-        f"<i>{agora}</i>",
-        ""
-    ]
+    mensagens = []
+    
+    cabecalho = f"<b>📊 ALVARÁS GOIÂNIA — IDs {inicio} a {fim}</b>\n<i>{agora}</i>"
+    mensagens.append(cabecalho)
 
     for dados in dados_brutos:
         pid = dados['ID Projeto']
+        linhas = [f"<b>📋 Projeto {pid}</b>"]
+        
         if dados.get('Status') == 'Sucesso':
-            linhas.append(f"━━━━━━━━━━━━━━━━━━━━")
-            linhas.append(f"<b>📋 Projeto {pid}</b>")
-            linhas.append(f"  Nº: {dados.get('Número', 'N/I')}")
-            linhas.append(f"  Tipo: {dados.get('Tipo', 'N/I')}")
-            linhas.append(f"  Situação: {dados.get('Situação', 'N/I')}")
-            linhas.append(f"  Endereço: {dados.get('Endereço', 'N/I')}")
-            linhas.append(f"  Proprietário: {dados.get('Proprietário', 'N/I')}")
+            linhas.append(f"  Nº: {escape_tg_html(dados.get('Número', 'N/I'))}")
+            linhas.append(f"  Tipo: {escape_tg_html(dados.get('Tipo', 'N/I'))}")
+            linhas.append(f"  Situação: {escape_tg_html(dados.get('Situação', 'N/I'))}")
+            linhas.append(f"  Endereço: {escape_tg_html(dados.get('Endereço', 'N/I'))}")
+            linhas.append(f"  Proprietário: {escape_tg_html(dados.get('Proprietário', 'N/I'))}")
             linhas.append("")
             linhas.append(f"<b>🤖 Resumo:</b>")
-            resumo = resumos.get(pid, "Não disponível")
+            resumo = escape_tg_html(resumos.get(pid, "Não disponível"))
             linhas.append(resumo)
         else:
-            linhas.append(f"━━━━━━━━━━━━━━━━━━━━")
-            linhas.append(f"<b>📋 Projeto {pid}</b>")
-            linhas.append(f"  ⚠️ {dados.get('Status', 'Erro')}")
-        linhas.append("")
+            linhas.append(f"  ⚠️ {escape_tg_html(dados.get('Status', 'Erro'))}")
+            
+        mensagens.append("\n".join(linhas))
 
-    return "\n".join(linhas)
-
+    return mensagens
 
 def montar_texto_console(dados_brutos, resumos, inicio, fim):
-    """Monta o texto para exibição no console/log."""
     linhas = [
         "=" * 60,
         f"  RESUMOS DE PROJETOS — IDs {inicio} a {fim}",
@@ -278,7 +259,6 @@ def montar_texto_console(dados_brutos, resumos, inicio, fim):
 
     return "\n".join(linhas)
 
-
 # --- EXECUÇÃO PRINCIPAL ---
 if __name__ == "__main__":
     print("=" * 60)
@@ -306,15 +286,13 @@ if __name__ == "__main__":
 
     dados_brutos, resumos = executar_varredura(PROJETO_INICIO, PROJETO_FIM)
 
-    # Exibe no console
     texto_console = montar_texto_console(dados_brutos, resumos, PROJETO_INICIO, PROJETO_FIM)
     print("\n" + texto_console)
 
-    # Envia para o Telegram
     if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
         print("\n---> Enviando para o Telegram...")
-        texto_tg = montar_texto_telegram(dados_brutos, resumos, PROJETO_INICIO, PROJETO_FIM)
-        enviar_telegram(texto_tg)
+        mensagens_tg = montar_mensagens_telegram(dados_brutos, resumos, PROJETO_INICIO, PROJETO_FIM)
+        enviar_mensagens_telegram(mensagens_tg)
     else:
         print("\n⚠️  Envio ao Telegram pulado (credenciais não configuradas).")
 
