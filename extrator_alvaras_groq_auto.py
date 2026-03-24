@@ -5,12 +5,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import os
 import json
+import sys  # Adicionado para permitir o encerramento do script
 
 # ==============================================================================
 #                          ÁREA DE CONTROLE (CONFIGURAÇÕES)
 # ==============================================================================
-PROJETO_INICIO = 43532
-PROJETO_FIM = 43535
+PROJETO_INICIO = 49436
+PROJETO_FIM = 49450
 MAX_WORKERS = 15
 TIMEOUT_REQUEST = 25
 BASE_URL = "https://www10.goiania.go.gov.br/alvarafacil/AcompanhaAprovacaoProjeto.aspx"
@@ -42,7 +43,7 @@ Dados do projeto:
 Responda APENAS com o texto do resumo, sem títulos ou formatação extra."""
 
 # ==============================================================================
-#                               FIM DA CONFIGURAÇÃO
+#                                FIM DA CONFIGURAÇÃO
 # ==============================================================================
 
 def escape_tg_html(text):
@@ -185,18 +186,47 @@ def executar_varredura(inicio, fim):
 
     resultados_brutos.sort(key=lambda x: x.get('ID Projeto', 0))
 
+    # ==============================================================================
+    #                      VERIFICAÇÃO DE REGRA (IGNORAR / ENCERRAR)
+    # ==============================================================================
+    falhas_seguidas = 0
+    for dados in resultados_brutos:
+        tipo = dados.get('Tipo', 'Não Informado')
+        numero = dados.get('Número', 'Não Informado')
+
+        if tipo == 'Não Informado' or numero == 'Não Informado':
+            falhas_seguidas += 1
+            dados['Ignorar'] = True
+            
+            if falhas_seguidas >= 3:
+                print(f"\n🛑 ALERTA CRÍTICO: 3 projetos seguidos com Tipo ou Nº 'Não Informado'.")
+                print("🛑 Encerrando a execução do script imediatamente conforme configurado.")
+                sys.exit(0)  # Mata o script completamente aqui
+        else:
+            falhas_seguidas = 0
+            dados['Ignorar'] = False
+    # ==============================================================================
+
     print(f"\n---> ETAPA 2/2: Resumos via Groq ({GROQ_MODEL})...")
     resumos = {}
     start_groq = time.time()
     groq_workers = min(5, MAX_WORKERS)
-    with ThreadPoolExecutor(max_workers=groq_workers) as executor:
-        futures = {executor.submit(gerar_resumo_groq, d): d['ID Projeto'] for d in resultados_brutos}
-        for i, future in enumerate(as_completed(futures)):
-            pid, texto = future.result()
-            resumos[pid] = texto
-            progresso = i + 1
-            if progresso % 5 == 0 or progresso == total:
-                print(f"  [{(progresso/total)*100:.1f}%] Resumo: {progresso}/{total}")
+    
+    # Filtra apenas os válidos para não gastar token do Groq atoa
+    projetos_validos = [d for d in resultados_brutos if not d.get('Ignorar')]
+
+    if not projetos_validos:
+        print("  ⚠️ Nenhum projeto válido para ser resumido.")
+    else:
+        with ThreadPoolExecutor(max_workers=groq_workers) as executor:
+            futures = {executor.submit(gerar_resumo_groq, d): d['ID Projeto'] for d in projetos_validos}
+            for i, future in enumerate(as_completed(futures)):
+                pid, texto = future.result()
+                resumos[pid] = texto
+                progresso = i + 1
+                if progresso % 5 == 0 or progresso == len(projetos_validos):
+                    print(f"  [{(progresso/len(projetos_validos))*100:.1f}%] Resumo: {progresso}/{len(projetos_validos)}")
+    
     print(f"---> Resumos: {time.time()-start_groq:.2f}s")
 
     return resultados_brutos, resumos
@@ -210,6 +240,10 @@ def montar_mensagens_telegram(dados_brutos, resumos, inicio, fim):
     mensagens.append(cabecalho)
 
     for dados in dados_brutos:
+        # Pula a montagem da mensagem se a flag "Ignorar" for True
+        if dados.get('Ignorar'):
+            continue
+
         pid = dados['ID Projeto']
         linhas = [f"<b>📋 Projeto {pid}</b>"]
         
@@ -243,6 +277,11 @@ def montar_texto_console(dados_brutos, resumos, inicio, fim):
         linhas.append(f"\n{'─' * 60}")
         linhas.append(f"📋 PROJETO ID {pid}")
         linhas.append(f"{'─' * 60}")
+
+        # Avisa no console que o projeto foi ignorado
+        if dados.get('Ignorar'):
+            linhas.append(f"  ⚠️ Projeto Ignorado (Tipo ou Nº Não Informado)")
+            continue
 
         if dados.get('Status') == 'Sucesso':
             linhas.append(f"  Número:       {dados.get('Número', 'N/I')}")
@@ -280,7 +319,7 @@ if __name__ == "__main__":
             print(f"   - {e}")
         if not GROQ_API_KEY:
             print("\n❌ Sem GROQ_API_KEY não é possível continuar. Abortando.")
-            exit(1)
+            sys.exit(1)
         print("\n⚠️  Continuando sem Telegram...\n")
 
     print(f"\n📌 Intervalo: Projeto {PROJETO_INICIO} ao {PROJETO_FIM}")
@@ -293,7 +332,12 @@ if __name__ == "__main__":
     if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         print("\n---> Enviando para o Telegram...")
         mensagens_tg = montar_mensagens_telegram(dados_brutos, resumos, PROJETO_INICIO, PROJETO_FIM)
-        enviar_mensagens_telegram(mensagens_tg)
+        
+        # Só envia se houver mais que apenas o cabeçalho
+        if len(mensagens_tg) > 1:
+            enviar_mensagens_telegram(mensagens_tg)
+        else:
+            print("  ⚠️ Nenhuma mensagem válida para enviar.")
     else:
         print("\n⚠️  Envio ao Telegram pulado (credenciais não configuradas).")
 
