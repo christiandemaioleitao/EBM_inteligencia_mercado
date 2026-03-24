@@ -1,0 +1,33 @@
+name: Extrator de Alvarás + Telegram
+
+# ── AGENDAMENTO ──────────────────────────────────────────────
+# Executa de segunda a sexta, às 08:00 (horário de Brasília = 11:00 UTC)
+# Também pode ser disparado manualmente pelo GitHub
+on:
+  schedule:
+    - cron: '0 11 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  extrair-e-enviar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependências
+        run: pip install requests lxml
+
+      - name: Executar extrator
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python extrator_alvaras_groq_auto.py
