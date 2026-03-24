@@ -24,7 +24,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = "llama-3.3-70b-versatile"
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 PROMPT_RESUMO = """Você é um analista de projetos de construção civil. Com base nos dados extraídos abaixo de um projeto de alvará de construção da Prefeitura de Goiânia, gere um resumo objetivo e profissional em português, com no máximo 6 linhas.
@@ -51,11 +51,11 @@ def escape_tg_html(text):
 
 def enviar_mensagens_telegram(mensagens):
     """Envia uma lista de mensagens individualmente para contornar limites de tamanho e formatação."""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
         print("⚠️  Telegram não configurado. Pulando envio.")
         return False
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     
     for i, msg in enumerate(mensagens):
         payload = {
@@ -269,8 +269,8 @@ if __name__ == "__main__":
     erros = []
     if not GROQ_API_KEY:
         erros.append("GROQ_API_KEY não configurada")
-    if not TELEGRAM_BOT_TOKEN:
-        erros.append("TELEGRAM_BOT_TOKEN não configurado")
+    if not TELEGRAM_TOKEN:
+        erros.append("TELEGRAM_TOKEN não configurado")
     if not TELEGRAM_CHAT_ID:
         erros.append("TELEGRAM_CHAT_ID não configurado")
 
@@ -290,7 +290,7 @@ if __name__ == "__main__":
     texto_console = montar_texto_console(dados_brutos, resumos, PROJETO_INICIO, PROJETO_FIM)
     print("\n" + texto_console)
 
-    if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+    if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
         print("\n---> Enviando para o Telegram...")
         mensagens_tg = montar_mensagens_telegram(dados_brutos, resumos, PROJETO_INICIO, PROJETO_FIM)
         enviar_mensagens_telegram(mensagens_tg)
