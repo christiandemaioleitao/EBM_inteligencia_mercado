@@ -10,8 +10,8 @@ import json
 #                          ÁREA DE CONTROLE (CONFIGURAÇÕES)
 # ==============================================================================
 # 1. Intervalo de projetos (preencha aqui)
-PROJETO_INICIO = 1
-PROJETO_FIM = 10
+PROJETO_INICIO = 43532
+PROJETO_FIM = 43533
 
 # 2. Performance
 MAX_WORKERS = 15
