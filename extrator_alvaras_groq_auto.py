@@ -9,7 +9,7 @@ import json
 # ==============================================================================
 #                          ÁREA DE CONTROLE (CONFIGURAÇÕES)
 # ==============================================================================
-PROJETO_INICIO = 49436
+PROJETO_INICIO = 49439
 PROJETO_FIM = 49450
 MAX_WORKERS = 15
 TIMEOUT_REQUEST = 25
