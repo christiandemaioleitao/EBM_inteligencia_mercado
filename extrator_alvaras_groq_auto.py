@@ -10,7 +10,7 @@ import json
 #                          ÁREA DE CONTROLE (CONFIGURAÇÕES)
 # ==============================================================================
 PROJETO_INICIO = 49439
-PROJETO_FIM = 49450
+PROJETO_FIM = 49490
 MAX_WORKERS = 15
 TIMEOUT_REQUEST = 25
 BASE_URL = "https://www10.goiania.go.gov.br/alvarafacil/AcompanhaAprovacaoProjeto.aspx"
