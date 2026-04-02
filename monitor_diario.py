@@ -51,7 +51,7 @@ TEXTO:
 
 Analise também o texto do Diário Oficial de Goiânia e identifique se existem as seguintes incorporadoras mencionadas no documento:
 
-"opus", "city", "ebm", "gpl", "dinâmica", "terral", "tenda", "mrv", "flamboyant urbanismo", "plano e plano", "CMO", "OLIVEIRA MELO", "O.M", "SEREN", "elmo", "sim".
+"CITY", "OPUS", "EBM", "FLAMBOYANT", "CMO", "TERRAL", "TENDA", "MRV", "SEREN", "OLIVEIRA MELO", "SOMOS", "SERCA", "SIM", "BAMBUÍ", "FR", "CONSCIENTE", "MZN", "ELMO", "PALME", "LEGADO", "YUTA", "SOUSA ANDRADE", "TRES", "CUSTODIO", "VILA BRASIL", "NEW INC", "GPL", "PARTINI", "LOURENÇO", "ENGESEG", "JOULE", "VEGA", "REALIZA".
 
 Para cada uma, extraia o contexto da menção, mencionando de forma bem resumida do que se trata a menção.
 1. Incorporadora
