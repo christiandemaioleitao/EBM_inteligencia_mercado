@@ -10,8 +10,8 @@ import json
 #                       ÁREA DE CONTROLE (CONFIGURAÇÕES)
 # ==============================================================================
 
-PROJETO_INICIO = 49478
-PROJETO_FIM = 49480
+PROJETO_INICIO = 49481
+PROJETO_FIM = 49650
 
 MAX_WORKERS = 15
 TIMEOUT_REQUEST = 25
