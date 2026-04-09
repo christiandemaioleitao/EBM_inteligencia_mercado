@@ -1,0 +1,77 @@
+name: Monitor de Lançamentos Imobiliários
+
+
+
+on:
+
+  schedule:
+
+    - cron: '3 11 * * *' # Roda todos os dias às 08h00 do fuso de Brasília (11h UTC)
+
+  workflow_dispatch: # Adiciona um botão no GitHub para você rodar manualmente sempre que quiser
+
+
+
+jobs:
+
+  scrape_and_notify:
+
+    runs-on: ubuntu-latest
+
+    permissions:
+
+      contents: write # Permissão essencial para o bot conseguir dar commit do JSON
+
+
+
+    steps:
+
+      - name: Checkout do repositório
+
+        uses: actions/checkout@v3
+
+
+
+      - name: Configurar ambiente Python
+
+        uses: actions/setup-python@v4
+
+        with:
+
+          python-version: '3.10'
+
+
+
+      - name: Instalar dependências
+
+        run: pip install requests beautifulsoup4
+
+
+
+      - name: Executar monitoramento
+
+        env:
+
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+        run: python monitor.py
+
+
+
+      - name: Commitar e dar Push do arquivo de histórico
+
+        run: |
+
+          git config --local user.email "action@github.com"
+
+          git config --local user.name "GitHub Action Monitor"
+
+          git add empreendimentos.json
+
+          # O "|| echo" previne que a pipeline falhe se nenhum projeto novo tiver sido adicionado
+
+          git commit -m "🤖 Atualiza registro histórico de empreendimentos" || echo "Sem novos lançamentos hoje"
+
+          git push
