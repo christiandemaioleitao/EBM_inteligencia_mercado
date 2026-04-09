@@ -56,7 +56,7 @@ jobs:
 
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
-        run: python monitor.py
+        run: python monitor_tenda_mrv.py
 
 
 
