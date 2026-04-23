@@ -46,27 +46,6 @@ Formate em HTML para Telegram:
 ------------------------
 Se não encontrar nada, responda apenas: "Nenhum remembramento encontrado no diário de hoje."
 
-TEXTO:
----
-
-Analise também o texto do Diário Oficial de Goiânia e identifique se existem as seguintes incorporadoras mencionadas no documento:
-
-"CITY", "OPUS", "EBM", "FLAMBOYANT", "CMO", "TERRAL", "TENDA", "MRV", "SEREN", "OLIVEIRA MELO", "SOMOS", "SERCA", "SIM", "BAMBUÍ", "FR", "CONSCIENTE", "MZN", "ELMO", "PALME", "LEGADO", "YUTA", "SOUSA ANDRADE", "TRES", "CUSTODIO", "VILA BRASIL", "NEW INC", "GPL", "PARTINI", "LOURENÇO", "ENGESEG", "JOULE", "VEGA", "REALIZA".
-
-Para cada uma, extraia o contexto da menção, mencionando de forma bem resumida do que se trata a menção.
-1. Incorporadora
-2. Contexto
-3. Resumo
-
-Formate em HTML para Telegram:
-🏢 <b>Incorporadora:</b> <i>Nome</i>
-📍 <b>Contexto:</b> <i>contexto</i>
-📝 <b>Resumo:</b> <i>Resumo</i>
-------------------------
-Se não encontrar nada, responda apenas: "Nenhum remembramento encontrado no diário de hoje."
-
-TEXTO:
----
 """
 
 def send_telegram_message(text):
