@@ -1,50 +1,55 @@
-Nome,Setor,Data,Conheça,A partir de,Simule,Lançamento,Construtora,Bairro
-Rota Panorama,Setor Coimbra,mai./26,Confira detalhes,nan,nan,nan,nan,nan
-Casa Conceito Marista,Marista,mai./26,Confira detalhes,nan,nan,nan,nan,nan
-Metropolitan Marista,Marista,jun./26,Confira detalhes,nan,nan,nan,nan,nan
-Nativ Parque Areião,Setor Pedro Ludovico,Sem previsão,Confira detalhes,nan,nan,nan,nan,nan
-Alameda Opus,Marista,nan,nan,Ainda não divulgado,Simule parcelas,nan,nan,nan
-Bioma Wellness Life,Setor Marista,nan,nan,R$ 722 mil,Simule parcelas,nan,nan,nan
-Dual O.M Stay,Marista,nan,nan,Esgotado,Simule parcelas,nan,nan,nan
-Opus Zoom 145,Marista,nan,nan,R$ 464 mil,Simule parcelas,nan,nan,nan
-Passos Flamboyant,Alto da Glória,nan,nan,R$ 580 mil,Simule parcelas,nan,nan,nan
-Kairós,Marista,nan,nan,R$ 744 mil,Simule parcelas,nan,nan,nan
-Hype Ricardo Paranhos,Marista,nan,nan,R$ 739 mil,Simule parcelas,nan,nan,nan
-Fusion Dinâmica Home,Nova Suiça,nan,nan,R$ 566 mil,Simule parcelas,nan,nan,nan
-Pré-lançamento Bambuí Rua 1141,Setor Marista,jun./26,nan,nan,nan,nan,nan,nan
-Pré-lançamento Palme Av. Nicolau Copérnico,Parque das Laranjeiras,mai./26,nan,nan,nan,nan,nan,nan
-Lançamento Brasal Ricardo Paranhos,Marista,mai./26,nan,nan,nan,nan,nan,nan
-Lançamento CMO Rua 1007,Setor Pedro Ludovico,mai./26,nan,nan,nan,nan,nan,nan
-Lançamento Somos - Av Milão,Vila União,mai./26,nan,nan,nan,nan,nan,nan
-Lançamento Eldorado,Parque Oeste Industrial,jun./26,nan,nan,nan,nan,nan,nan
-Pré-lançamento Martins Soares,Marista,jun./26,nan,nan,nan,nan,nan,nan
-Pré-lançamento Consciente Rua 137,Setor Marista,jun./26,nan,nan,nan,nan,nan,nan
-Lançamento MyBroker Marista,Setor Marista,1º semestre/26,nan,nan,nan,nan,nan,nan
-Lançamento GPL Vila Rosa,Vila Rosa,1º semestre/26,nan,nan,nan,nan,nan,nan
-Lançamento Yutá Bueno,Bueno,jul./26,nan,nan,nan,nan,nan,nan
-Pré-Lançamento City Rua 1142 - City 35,Marista,jul./26,nan,nan,nan,nan,nan,nan
-Lançamento EBM,Eldorado,ago./26,nan,nan,nan,nan,nan,nan
-Pré-lançamento Flamboyant Avenida H,Jardim Goiás,ago./26,nan,nan,nan,nan,nan,nan
-Pré-lançamento Ávolli T-30,Bueno,ago./26,nan,nan,nan,nan,nan,nan
-Pré-Lançamento Palme Rua C-241,Jardim América,set./26,nan,nan,nan,nan,nan,nan
-Lançamento FR - Jardim Atlantico,Jardima Atlantico,set./26,nan,nan,nan,nan,nan,nan
-Pré-lançamento City AV T-5,Setor Bueno,out./26,nan,nan,nan,nan,nan,nan
-Pré-lançamento Ávolli Rua C-234,Jardim America,2º semestre/26,nan,nan,nan,nan,nan,nan
-Pré-lançamento Bambui Rua C-242,Jardim América,2º semestre/26,nan,nan,nan,nan,nan,nan
-Lançamento ACCE,Setor Marista,2º semestre/26,nan,nan,nan,nan,nan,nan
-Lançamento Brasal Marista,Marista,2º semestre/26,nan,nan,nan,nan,nan,nan
-Lancamento WV Maldi,Setor Pedro Ludovico,2º semestre/26,nan,nan,nan,nan,nan,nan
-Lançamento Brasal Av. 136,Setor Marista,2027,nan,nan,nan,nan,nan,nan
-Lançamento Flamboyant & Foster + Partners,Jardim Goias,2027,nan,nan,nan,nan,nan,nan
-nan,nan,nan,nan,nan,nan,Alameda Opus,Construtora Opus,Marista
-nan,nan,nan,nan,nan,nan,Bioma Wellness Life,Construtora WV Maldi,Setor Marista
-nan,nan,nan,nan,nan,nan,Dual O.M Stay,OM Incorporadora,Marista
-nan,nan,nan,nan,nan,nan,Opus Zoom 145,Construtora Opus,Marista
-nan,nan,nan,nan,nan,nan,Passos Flamboyant,Construtora CMO,Alto da Glória
-nan,nan,nan,nan,nan,nan,Kairós,Construtora Tapajós,Marista
-nan,nan,nan,nan,nan,nan,Hype Ricardo Paranhos,Terral Incorporadora,Marista
-nan,nan,nan,nan,nan,nan,Fusion Dinâmica Home,Construtora Dinâmica,Nova Suiça
-nan,nan,nan,nan,nan,nan,Rota Panorama,Construtora EBM,Setor Coimbra
-nan,nan,nan,nan,nan,nan,Casa Conceito Marista,Construtora Terral,Marista
-nan,nan,nan,nan,nan,nan,Metropolitan Marista,Construtora EBM,Marista
-nan,nan,nan,nan,nan,nan,Nativ Parque Areião,Construtora Castel Infinity,Setor Pedro Ludovico
+Nome,Bairro,Data,Conheça,A partir de,Simule,Lançamento,Construtora
+Nativ Parque Areião,Pedro Ludovico,Abr/2026,Conheça,nan,nan,nan,nan
+Casa Conceito Marista,Setor Marista,Mai/2026,Conheça,nan,nan,nan,nan
+Icoon Home Resort,Jardim Europa,Mai/2026,Conheça,nan,nan,nan,nan
+Rota Panorama,St. Coimbra,Mai/2026,Conheça,nan,nan,nan,nan
+Surya By Palme,Parque das Laranjeiras,Mai/2026,Conheça,nan,nan,nan,nan
+Areião 1141,Setor Marista,Jun/2026,Conheça,nan,nan,nan,nan
+Una Areião,Setor Pedro Ludovico,Jun/2026,Conheça,nan,nan,nan,nan
+Metropolitan Marista,Setor Marista,Ago/2026,Conheça,nan,nan,nan,nan
+Fusion Dinâmica Home,Nova Suiça,nan,nan,R$ 572 mil,Simule,nan,nan
+Alameda Opus,Setor Marista,nan,nan,"R$ 3,66 milhões",Simule,nan,nan
+Hype Ricardo Paranhos,Setor Marista,nan,nan,R$ 739 mil,Simule,nan,nan
+Pré-lançamento Consciente Rua 137,Setor Marista,Jun/2026,nan,nan,nan,nan,nan
+Lançamento Loft,St. Bela Vista,Jul/2026,nan,nan,nan,nan,nan
+Lançamento MyBroker Marista,Setor Marista,Jul/2026,nan,nan,nan,nan,nan
+Pré-Lançamento City Rua 1142 - City 35,Setor Marista,Jul/2026,nan,nan,nan,nan,nan
+Lançamento Brasal Ricardo Paranhos,Setor Marista,Ago/2026,nan,nan,nan,nan,nan
+Lançamento FR - Jardim Atlantico,Jardima Atlantico,Ago/2026,nan,nan,nan,nan,nan
+Lançamento GPL Vila Rosa,Vila Rosa,Ago/2026,nan,nan,nan,nan,nan
+Lançamento MZN,Centro,Ago/2026,nan,nan,nan,nan,nan
+Pré-lançamento Ávolli T-30,Setor Bueno,Ago/2026,nan,nan,nan,nan,nan
+Pré-lançamento CFMais AV. Independência,Jardim Atlantico,Ago/2026,nan,nan,nan,nan,nan
+Pré-lançamento Flamboyant Avenida H,Jardim Goiás,Ago/2026,nan,nan,nan,nan,nan
+Pré-lançamento Martins Soares,Setor Marista,Ago/2026,nan,nan,nan,nan,nan
+Lançamento Sousa Andrade,Setor Bueno,Set/2026,nan,nan,nan,nan,nan
+Pré-lançamento Bambui Rua C-242,Jardim América,Set/2026,nan,nan,nan,nan,nan
+Pré-lançamento Dinâmica Rua C-247,Setor Nova Suiça,Set/2026,nan,nan,nan,nan,nan
+Pré-Lançamento Palme Rua C-241,Jardim América,Set/2026,nan,nan,nan,nan,nan
+Lançamento Brasal Marista,Setor Marista,Out/2026,nan,nan,nan,nan,nan
+Lançamento City Quartier 245 - Rua 1136,Setor Marista,Out/2026,nan,nan,nan,nan,nan
+Lançamento Castel Infinity - S. Canedo,Senador Canedo,Nov/2026,nan,nan,nan,nan,nan
+Lançamento Flamboyant Urbanismo - Rua 13,Jardim Goias,Nov/2026,nan,nan,nan,nan,nan
+Lançamento Gama Dias - Leste Oeste,Setor Marechal Rondon,Nov/2026,nan,nan,nan,nan,nan
+Lançamento Terral Bueno,Setor Bueno,Nov/2026,nan,nan,nan,nan,nan
+Pré-lançamento Ávolli Rua C-234,Jardim America,Nov/2026,nan,nan,nan,nan,nan
+Pré-lançamento GPL Rua 24,Centro,Nov/2026,nan,nan,nan,nan,nan
+Lancamento WV Maldi,Setor Pedro Ludovico,Fev/2027,nan,nan,nan,nan,nan
+Lançamento Flamboyant & Foster + Partners,GO-020,Mai/2027,nan,nan,nan,nan,nan
+Pré-lançamento City AV T-5,Setor Bueno,Out/2027,nan,nan,nan,nan,nan
+nan,Setor Marista,nan,nan,nan,nan,Alameda Opus,Construtora Opus
+nan,Setor Marista,nan,nan,nan,nan,Bioma Wellness Life,Construtora WV Maldi
+nan,Setor Marista,nan,nan,nan,nan,Dual O.M Stay,OM Incorporadora
+nan,Setor Marista,nan,nan,nan,nan,Opus Zoom 145,Construtora Opus
+nan,Alto da Glória,nan,nan,nan,nan,Passos Flamboyant,Construtora CMO
+nan,Setor Marista,nan,nan,nan,nan,Kairós,Construtora Tapajós
+nan,Setor Marista,nan,nan,nan,nan,Hype Ricardo Paranhos,Terral Incorporadora
+nan,Nova Suiça,nan,nan,nan,nan,Fusion Dinâmica Home,Construtora Dinâmica
+nan,Setor Coimbra,nan,nan,nan,nan,Rota Panorama,Construtora EBM
+nan,Setor Marista,nan,nan,nan,nan,Casa Conceito Marista,Construtora Terral
+nan,Setor Marista,nan,nan,nan,nan,Metropolitan Marista,Construtora EBM
+nan,Setor Pedro Ludovico,nan,nan,nan,nan,Nativ Parque Areião,Construtora Castel Infinity
+nan,Jardim Europa,nan,nan,nan,nan,Icoon Home Resort,Somos Desenvolvimento Imobiliário
+nan,Parque das Laranjeiras,nan,nan,nan,nan,Surya By Palme,Palme
+nan,Setor Marista,nan,nan,nan,nan,Areião 1141,Bambuí Empreendimentos
+nan,Setor Pedro Ludovico,nan,nan,nan,nan,Una Areião,CMO
