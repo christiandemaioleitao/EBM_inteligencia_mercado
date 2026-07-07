@@ -1,18 +1,17 @@
 Nome,Bairro,Data,Conheça,A partir de,Simule,Lançamento,Construtora
-Icoon Home Resort,Jardim Europa,Jun/2026,Conheça,nan,nan,nan,nan
-Areião 1141,Setor Marista,Jun/2026,Conheça,nan,nan,nan,nan
-Greco Parque Cascavel,Vila Rosa,Jun/2026,Conheça,nan,nan,nan,nan
-Una Areião,Setor Pedro Ludovico,Jun/2026,Conheça,nan,nan,nan,nan
+Icoon Home Resort,Jardim Europa,Jul/2026,Conheça,nan,nan,nan,nan
+Areião 1141,Setor Marista,Jul/2026,Conheça,nan,nan,nan,nan
+Greco Parque Cascavel,Vila Rosa,Jul/2026,Conheça,nan,nan,nan,nan
+Una Areião,Setor Pedro Ludovico,Ago/2026,Conheça,nan,nan,nan,nan
 Metropolitan Marista,Setor Marista,Ago/2026,Conheça,nan,nan,nan,nan
+Visum Residence,Santa Genoveva,Jan/2027,Conheça,nan,nan,nan,nan
 Haile Pinheiro Club House,St. Bela Vista,nan,nan,R$ 399 mil,Simule,nan,nan
-Le Blu Consciente,Setor Marista,nan,nan,"R$ 2,16 milhões",Simule,nan,nan
+Le Blu Consciente,Setor Marista,nan,nan,"R$ 2,21 milhões",Simule,nan,nan
 Casa Conceito Marista,Setor Marista,nan,nan,"R$ 3,97 milhões",Simule,nan,nan
 Rota Panorama,St. Coimbra,nan,nan,R$ 322 mil,Simule,nan,nan
 Surya By Palme,Parque das Laranjeiras,nan,nan,"R$ 1,18 milhão",Simule,nan,nan
-Alameda Opus,Setor Marista,nan,nan,"R$ 3,66 milhões",Simule,nan,nan
-Hype Ricardo Paranhos,Setor Marista,nan,nan,R$ 739 mil,Simule,nan,nan
+Alameda Opus,Setor Marista,nan,nan,"R$ 4,23 milhões",Simule,nan,nan
 Nativ Parque Areião,Pedro Ludovico,nan,nan,R$ 596 mil,Simule,nan,nan
-Fusion Dinâmica Home,Nova Suiça,nan,nan,R$ 572 mil,Simule,nan,nan
 Lançamento MyBroker Marista,Setor Marista,Jul/2026,nan,nan,nan,nan,nan
 Pré-Lançamento City Rua 1142 - City 35,Setor Marista,Jul/2026,nan,nan,nan,nan,nan
 Lançamento Brasal Ricardo Paranhos,Setor Marista,Ago/2026,nan,nan,nan,nan,nan
@@ -24,20 +23,11 @@ Vibe Parque Cascavel,Jardim Atlantico,Ago/2026,nan,nan,nan,nan,nan
 Pré-lançamento Bambui Rua C-242,Jardim América,Set/2026,nan,nan,nan,nan,nan
 Pré-lançamento Dinâmica Rua C-247,Setor Nova Suiça,Set/2026,nan,nan,nan,nan,nan
 Pré-lançamento Martins Soares,Setor Marista,Set/2026,nan,nan,nan,nan,nan
-Pré-Lançamento Palme Rua C-241,Jardim América,Set/2026,nan,nan,nan,nan,nan
+Pré-lançamento Palme Rua C-241,Jardim América,Set/2026,nan,nan,nan,nan,nan
 Lançamento Brasal Marista,Setor Marista,Out/2026,nan,nan,nan,nan,nan
 Lançamento City Quartier 245 - Rua 1136,Setor Marista,Out/2026,nan,nan,nan,nan,nan
-Lançamento Castel Infinity - S. Canedo,Senador Canedo,Nov/2026,nan,nan,nan,nan,nan
-Lançamento Flamboyant Urbanismo - Rua 13,Jardim Goias,Nov/2026,nan,nan,nan,nan,nan
-Lançamento Gama Dias - Leste Oeste,Setor Marechal Rondon,Nov/2026,nan,nan,nan,nan,nan
-Lançamento MZN,Centro,Nov/2026,nan,nan,nan,nan,nan
-Lançamento Terral Bueno,Setor Bueno,Nov/2026,nan,nan,nan,nan,nan
-Lançamento Tr3s Inc.,Jardim Botânico,Nov/2026,nan,nan,nan,nan,nan
-Pré-lançamento Ávolli Rua C-234,Jardim America,Nov/2026,nan,nan,nan,nan,nan
-Pré-lançamento GPL Rua 24,Centro,Nov/2026,nan,nan,nan,nan,nan
-Lancamento WV Maldi,Setor Pedro Ludovico,Fev/2027,nan,nan,nan,nan,nan
+Lançamento Serca,Jardim América,Out/2026,nan,nan,nan,nan,nan
 Lançamento Flamboyant & Foster + Partners,Jardim Goiás,Mai/2027,nan,nan,nan,nan,nan
-Pré-lançamento City AV T-5,Setor Bueno,Out/2027,nan,nan,nan,nan,nan
 nan,Setor Marista,nan,nan,nan,nan,Alameda Opus,Construtora Opus
 nan,Setor Marista,nan,nan,nan,nan,Bioma Wellness Life,Construtora WV Maldi
 nan,Setor Marista,nan,nan,nan,nan,Dual O.M Stay,OM Incorporadora
@@ -53,7 +43,8 @@ nan,Setor Pedro Ludovico,nan,nan,nan,nan,Nativ Parque Areião,Construtora Castel
 nan,Jardim Europa,nan,nan,nan,nan,Icoon Home Resort,Somos
 nan,Parque das Laranjeiras,nan,nan,nan,nan,Surya By Palme,Palme
 nan,Setor Marista,nan,nan,nan,nan,Areião 1141,Bambuí Empreendimentos
-nan,Setor Pedro Ludovico,nan,nan,nan,nan,Una Areião,CMO
+nan,Setor Pedro Ludovico,nan,nan,nan,nan,Una Areião,Construtora CMO
 nan,St. Bela Vista,nan,nan,nan,nan,Haile Pinheiro Club House,Loft
 nan,Setor Marista,nan,nan,nan,nan,Le Blu Consciente,Consciente
 nan,Vila Rosa,nan,nan,nan,nan,Greco Parque Cascavel,GPL Incorporadora
+nan,Santa Genoveva,nan,nan,nan,nan,Visum Residence,Regional
