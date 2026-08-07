@@ -2,14 +2,17 @@
 
 Roda toda segunda-feira: pega os diários publicados nos últimos 7 dias que ainda
 não foram lidos, filtra as páginas que citam os termos monitorados e pede à IA
-(Gemini com fallback Mistral) o resumo das certidões encontradas.
+(Gemini com fallback Mistral) as certidões encontradas em JSON. Lotes resultantes
+abaixo de AREA_MINIMA_M2 são descartados — não têm porte de incorporação.
 
 O controle do que já foi lido fica em ultimo_diario.txt (um arquivo PDF por
 linha), commitado pelo workflow — é isso que impede repetir informação.
 """
 
 import datetime
+import html
 import io
+import json
 import os
 import re
 
@@ -25,6 +28,8 @@ ARQUIVO_HISTORICO = "ultimo_diario.txt"
 MAX_HISTORICO = 200
 TERMOS = ("remembramento", "desmembramento")
 LIMITE_CHARS = 120_000
+# Abaixo disso o lote é pequeno demais para incorporação imobiliária.
+AREA_MINIMA_M2 = 850.0
 
 FUSO_BRT = datetime.timezone(datetime.timedelta(hours=-3))
 # do_20260806_000008836.pdf -> data + nome do arquivo
@@ -41,19 +46,24 @@ IGNORAR_HISTORICO = os.environ.get("IGNORAR_HISTORICO", "").lower() in ("1", "tr
 PROMPT_IA = """Analise o trecho do Diário Oficial de Goiânia abaixo e liste APENAS as
 certidões de REMEMBRAMENTO ou DESMEMBRAMENTO.
 
-Para cada uma, extraia:
-1. Interessado
-2. Endereço/localização do imóvel
-3. Tipo (Remembramento ou Desmembramento) + resumo da decisão
+Responda SÓ com um array JSON válido, sem markdown e sem texto em volta.
+Cada item do array deve ter exatamente estas chaves:
+{
+  "interessado": "nome do interessado",
+  "local": "endereço/localização do imóvel",
+  "tipo": "Remembramento" ou "Desmembramento",
+  "resumo": "resumo curto da decisão",
+  "area_m2": área do terreno resultante, em metros quadrados, ou null
+}
 
-Responda SÓ com os registros, sem introdução, sem markdown e sem blocos de código.
-Use exatamente este formato HTML do Telegram para cada certidão:
-🏢 <b>Interessado:</b> <i>Nome</i>
-📍 <b>Local:</b> <i>Endereço</i>
-📝 <b>Decisão:</b> <i>Tipo — resumo</i>
-------------------------
+Regras para "area_m2":
+- Remembramento: a área total do lote unificado resultante.
+- Desmembramento: a área do maior lote resultante.
+- Devolva número puro, ponto como separador decimal e sem separador de milhar
+  (ex.: 1.364,50 m² vira 1364.50).
+- Se a certidão não informar a área, use null. Nunca invente ou estime.
 
-Se não encontrar nenhuma certidão desses dois tipos, responda exatamente: NADA
+Se não encontrar nenhuma certidão desses dois tipos, responda apenas: []
 """
 
 
@@ -181,18 +191,69 @@ def _chamar_mistral(prompt):
     raise RuntimeError(f"todas as {len(MISTRAL_API_KEYS)} chaves Mistral falharam: {ultimo_erro}")
 
 
+def _extrair_json(texto):
+    """A IA às vezes embrulha o array em ```json ou em uma frase de introdução."""
+    achado = re.search(r"\[.*\]", texto or "", re.S)
+    if not achado:
+        raise ValueError(f"resposta sem JSON: {(texto or '')[:120]}")
+    return [r for r in json.loads(achado.group(0)) if isinstance(r, dict)]
+
+
 def analisar(trecho):
+    """Devolve a lista de certidões achadas, ou None se nenhum provedor de IA respondeu."""
     prompt = f"{PROMPT_IA}\n\n{trecho}"
     for nome, chamar in (("Gemini", _chamar_gemini), ("Mistral", _chamar_mistral)):
         try:
-            texto = chamar(prompt)
-            if texto and texto.strip():
-                print(f"   ✅ análise via {nome}")
-                return texto.strip()
-            print(f"   ⚠️ {nome} devolveu resposta vazia")
+            registros = _extrair_json(chamar(prompt))
+            print(f"   ✅ análise via {nome}: {len(registros)} certidão(ões)")
+            return registros
         except Exception as e:
             print(f"   ⚠️ {nome} falhou: {e}")
     return None
+
+
+# ==========================================
+# FILTRO DE ÁREA E FORMATAÇÃO
+# ==========================================
+def area_do_registro(registro):
+    """Área em m² como float, ou None quando a certidão não informou."""
+    valor = registro.get("area_m2")
+    if isinstance(valor, (int, float)):
+        return float(valor)
+    texto = str(valor or "").replace(" ", "").replace("m²", "")
+    if "," in texto:  # veio no formato brasileiro: 1.364,50
+        texto = texto.replace(".", "").replace(",", ".")
+    try:
+        return float(texto)
+    except ValueError:
+        return None
+
+
+def tem_porte_de_incorporacao(registro):
+    """Descarta lotes abaixo do mínimo. Área não informada passa: melhor avaliar
+    manualmente do que perder um terreno grande por silêncio da certidão."""
+    area = area_do_registro(registro)
+    return area is None or area >= AREA_MINIMA_M2
+
+
+def _campo(registro, chave):
+    """Escapa o texto da IA: um '&' na razão social quebraria o parse HTML do Telegram."""
+    return html.escape(str(registro.get(chave) or "—"))
+
+
+def formatar(registro):
+    area = area_do_registro(registro)
+    if area is None:
+        area_txt = "não informada"
+    else:
+        area_txt = f"{area:,.2f} m²".replace(",", "|").replace(".", ",").replace("|", ".")
+    return (
+        f"🏢 <b>Interessado:</b> <i>{_campo(registro, 'interessado')}</i>\n"
+        f"📍 <b>Local:</b> <i>{_campo(registro, 'local')}</i>\n"
+        f"📐 <b>Área resultante:</b> <i>{area_txt}</i>\n"
+        f"📝 <b>Decisão:</b> <i>{_campo(registro, 'tipo')} — {_campo(registro, 'resumo')}</i>\n"
+        f"------------------------"
+    )
 
 
 # ==========================================
@@ -216,6 +277,7 @@ def main():
     print(f"{len(novos)} diário(s) novo(s): {', '.join(n for _, n, _ in novos)}")
     achados = []
     lidos = []
+    pequenos = 0
     for data, nome, url in novos:
         print(f"\n📄 {data:%d/%m/%Y} — {nome}")
         try:
@@ -231,14 +293,28 @@ def main():
             continue
 
         print(f"   🔎 {len(trecho)} caracteres relevantes, enviando para a IA...")
-        analise = analisar(trecho)
-        if not analise:
+        registros = analisar(trecho)
+        if registros is None:
             achados.append(f"⚠️ <b>{data:%d/%m/%Y}</b> — termos encontrados, mas a IA não respondeu.\n"
                            f"🔗 <a href='{url}'>Abrir PDF</a>")
-        elif analise.strip(" .\n").upper() != "NADA":
-            achados.append(f"📅 <b>{data:%d/%m/%Y}</b> — <a href='{url}'>PDF</a>\n\n{analise}")
+            continue
 
-    corpo = "\n\n".join(achados) if achados else "ℹ️ Nenhum remembramento ou desmembramento no período."
+        relevantes = [r for r in registros if tem_porte_de_incorporacao(r)]
+        descartados = [r for r in registros if not tem_porte_de_incorporacao(r)]
+        pequenos += len(descartados)
+        if descartados:
+            # Fica no log para o descarte ser auditável, mas não vai para o Telegram.
+            print(f"   ↳ {len(descartados)} lote(s) abaixo de {AREA_MINIMA_M2:.0f} m² descartado(s): "
+                  + ", ".join(f"{area_do_registro(r)} m²" for r in descartados))
+        if relevantes:
+            achados.append(f"📅 <b>{data:%d/%m/%Y}</b> — <a href='{url}'>PDF</a>\n\n"
+                           + "\n\n".join(formatar(r) for r in relevantes))
+
+    corpo = "\n\n".join(achados) if achados else (
+        f"ℹ️ Nenhum remembramento ou desmembramento acima de {AREA_MINIMA_M2:.0f} m² no período."
+    )
+    if pequenos:
+        corpo += f"\n\n🚫 {pequenos} lote(s) abaixo de {AREA_MINIMA_M2:.0f} m² ignorado(s)."
     enviar_telegram(f"{cabecalho} — {len(lidos)} edição(ões) lida(s)\n\n{corpo}")
 
     if IGNORAR_HISTORICO:
