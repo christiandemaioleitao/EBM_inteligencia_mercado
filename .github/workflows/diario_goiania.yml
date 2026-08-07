@@ -2,17 +2,23 @@ name: Monitor do Diário Oficial de Goiânia
 
 on:
   schedule:
-    
-    # 12:13 Horário de Brasília
-    - cron: '13 15 * * *' 
-   
-  workflow_dispatch: # Permite rodar manualmente para testar
-  
+    # Toda segunda-feira às 10:13 de Brasília (13:13 UTC)
+    - cron: '13 13 * * 1'
+
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: 'Janela em dias a analisar (vazio = 7)'
+      ignorar_historico:
+        description: 'Reprocessar edições já lidas (teste, não salva histórico)'
+        type: boolean
+        default: false
+
 jobs:
   check-site:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Essencial para o bot salvar o arquivo .txt
+      contents: write # Essencial para o bot salvar o ultimo_diario.txt
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
@@ -25,19 +31,21 @@ jobs:
       - name: Instalar dependências
         run: |
           python -m pip install --upgrade pip
-          pip install requests beautifulsoup4 pypdf google-generativeai pandas lxml
+          pip install requests beautifulsoup4 pypdf google-generativeai
 
       - name: Rodar o script de monitoramento
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-        run: python monitor_diario.py # Certifique-se de que o nome do arquivo seja monitor.py
+          MISTRAL_API_KEYS: ${{ secrets.MISTRAL_API_KEYS }}
+          DIAS_JANELA: ${{ inputs.dias }}
+          IGNORAR_HISTORICO: ${{ inputs.ignorar_historico }}
+        run: python monitor_diario.py
 
-      - name: Commitar base de dados atualizada
+      - name: Commitar controle de leitura
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          # Adiciona tanto o .txt quanto um possível .csv se você usar
           git add ultimo_diario.txt
-          git diff --staged --quiet || (git commit -m "bot: atualiza controle de leitura" && git push)
+          git diff --staged --quiet || (git commit -m "bot: atualiza controle de leitura do diario" && git push)
