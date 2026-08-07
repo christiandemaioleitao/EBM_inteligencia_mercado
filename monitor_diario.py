@@ -204,6 +204,8 @@ def main():
     historico = set() if IGNORAR_HISTORICO else carregar_historico()
     cabecalho = f"🏛️ <b>Diário Oficial de Goiânia</b>\nPeríodo: {desde:%d/%m} a {hoje:%d/%m}"
 
+    print(f"IA: Gemini {'ok' if GOOGLE_API_KEY else 'ausente'} | "
+          f"fallback Mistral: {len(MISTRAL_API_KEYS)} chave(s)")
     print(f"Buscando diários de {desde:%d/%m/%Y} até {hoje:%d/%m/%Y}...")
     novos = [d for d in listar_diarios(desde, hoje) if d[1] not in historico]
     if not novos:
