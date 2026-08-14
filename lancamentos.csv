@@ -1,50 +1,29 @@
-Nome,Bairro,Data,Conheça,A partir de,Simule,Lançamento,Construtora
-Areião 1141,Setor Marista,Jun/2026,Conheça,nan,nan,nan,nan
-Greco Parque Cascavel,Vila Rosa,Jun/2026,Conheça,nan,nan,nan,nan
-Una Areião,Setor Pedro Ludovico,Jun/2026,Conheça,nan,nan,nan,nan
-Metropolitan Marista,Setor Marista,Ago/2026,Conheça,nan,nan,nan,nan
-Visum Residence,Santa Genoveva,Jan/2027,Conheça,nan,nan,nan,nan
-Haile Pinheiro Club House,St. Bela Vista,nan,nan,R$ 399 mil,Simule,nan,nan
-Le Blu Consciente,Setor Marista,nan,nan,"R$ 2,21 milhões",Simule,nan,nan
-Casa Conceito Marista,Setor Marista,nan,nan,"R$ 3,97 milhões",Simule,nan,nan
-Icoon Home Resort,Jardim Europa,nan,nan,R$ 272 mil,Simule,nan,nan
-Rota Panorama,St. Coimbra,nan,nan,R$ 322 mil,Simule,nan,nan
-Surya By Palme,Parque das Laranjeiras,nan,nan,"R$ 1,18 milhão",Simule,nan,nan
-Alameda Opus,Setor Marista,nan,nan,"R$ 4,23 milhões",Simule,nan,nan
-Nativ Parque Areião,Pedro Ludovico,nan,nan,R$ 596 mil,Simule,nan,nan
-Lançamento MyBroker Marista,Setor Marista,Jul/2026,nan,nan,nan,nan,nan
-Pré-Lançamento City Rua 1142 - City 35,Setor Marista,Jul/2026,nan,nan,nan,nan,nan
-Lançamento Brasal Ricardo Paranhos,Setor Marista,Ago/2026,nan,nan,nan,nan,nan
-Lançamento FR - Jardim Atlantico,Jardima Atlantico,Ago/2026,nan,nan,nan,nan,nan
-Lançamento UP,Setor Marista,Ago/2026,nan,nan,nan,nan,nan
-Pré-lançamento Ávolli T-30,Setor Bueno,Ago/2026,nan,nan,nan,nan,nan
-Pré-lançamento Flamboyant Avenida H,Jardim Goiás,Ago/2026,nan,nan,nan,nan,nan
-Vibe Parque Cascavel,Jardim Atlantico,Ago/2026,nan,nan,nan,nan,nan
-Pré-lançamento Bambui Rua C-242,Jardim América,Set/2026,nan,nan,nan,nan,nan
-Pré-lançamento Dinâmica Rua C-247,Setor Nova Suiça,Set/2026,nan,nan,nan,nan,nan
-Pré-lançamento Martins Soares,Setor Marista,Set/2026,nan,nan,nan,nan,nan
-Pré-Lançamento Palme Rua C-241,Jardim América,Set/2026,nan,nan,nan,nan,nan
-Lançamento Brasal Marista,Setor Marista,Out/2026,nan,nan,nan,nan,nan
-Lançamento City Quartier 245 - Rua 1136,Setor Marista,Out/2026,nan,nan,nan,nan,nan
-Lançamento Serca,Jardim América,Out/2026,nan,nan,nan,nan,nan
-Lançamento Flamboyant & Foster + Partners,Jardim Goiás,Sem previsão,nan,nan,nan,nan,nan
-nan,Setor Marista,nan,nan,nan,nan,Alameda Opus,Construtora Opus
-nan,Setor Marista,nan,nan,nan,nan,Bioma Wellness Life,Construtora WV Maldi
-nan,Setor Marista,nan,nan,nan,nan,Dual O.M Stay,OM Incorporadora
-nan,Setor Marista,nan,nan,nan,nan,Opus Zoom 145,Construtora Opus
-nan,Alto da Glória,nan,nan,nan,nan,Passos Flamboyant,Construtora CMO
-nan,Setor Marista,nan,nan,nan,nan,Kairós,Construtora Tapajós
-nan,Setor Marista,nan,nan,nan,nan,Hype Ricardo Paranhos,Terral Incorporadora
-nan,Nova Suiça,nan,nan,nan,nan,Fusion Dinâmica Home,Construtora Dinâmica
-nan,Setor Coimbra,nan,nan,nan,nan,Rota Panorama,Construtora EBM
-nan,Setor Marista,nan,nan,nan,nan,Casa Conceito Marista,Construtora Terral
-nan,Setor Marista,nan,nan,nan,nan,Metropolitan Marista,Construtora EBM
-nan,Setor Pedro Ludovico,nan,nan,nan,nan,Nativ Parque Areião,Construtora Castel Infinity
-nan,Jardim Europa,nan,nan,nan,nan,Icoon Home Resort,Somos
-nan,Parque das Laranjeiras,nan,nan,nan,nan,Surya By Palme,Palme
-nan,Setor Marista,nan,nan,nan,nan,Areião 1141,Bambuí Empreendimentos
-nan,Setor Pedro Ludovico,nan,nan,nan,nan,Una Areião,Construtora CMO
-nan,St. Bela Vista,nan,nan,nan,nan,Haile Pinheiro Club House,Loft
-nan,Setor Marista,nan,nan,nan,nan,Le Blu Consciente,Consciente
-nan,Vila Rosa,nan,nan,nan,nan,Greco Parque Cascavel,GPL Incorporadora
-nan,Santa Genoveva,nan,nan,nan,nan,Visum Residence,Regional
+Nome,Bairro,Data,Conheça,A partir de,Simule,Cidade
+City Code Areião,Setor Marista,Ago/2026,Conheça,nan,nan,nan
+Una Areião,Setor Pedro Ludovico,Jun/2026,Conheça,nan,nan,nan
+Metropolitan Marista,Setor Marista,Ago/2026,Conheça,nan,nan,nan
+Tempo Flamboyant Residencial,Jardim Goiás,Ago/2026,Conheça,nan,nan,nan
+FR. Atlant,Jardim Atlântico,Set/2026,Conheça,nan,nan,nan
+Areião 1141,Setor Marista,nan,nan,"R$ 1,06 milhão",Simule,nan
+Alameda Opus,Setor Marista,nan,nan,Ainda não divulgado,Simule,nan
+Casa Conceito Marista,Setor Marista,nan,nan,"R$ 3,87 milhões",Simule,nan
+Le Blu Consciente,Setor Marista,nan,nan,Ainda não divulgado,Simule,nan
+Greco Parque Cascavel,Vila Rosa,nan,nan,R$ 528 mil,Simule,nan
+Lançamento Brasal Ricardo Paranhos,Setor Marista,Set/2026,nan,nan,nan,nan
+Lançamento City Quartier 245 - Rua 1136,Setor Marista,Nov/2026,nan,nan,nan,nan
+Pré-lançamento Martins Soares Inc,Setor Marista,Set/2026,nan,nan,nan,nan
+Pré-lançamento Ávolli T-30,Setor Bueno,Nov/2026,nan,nan,nan,nan
+Lançamento QS,Setor Leste Universitário,Set/2026,nan,nan,nan,nan
+Lançamento Rota Panorama 2ª Etapa,Setor Coimbra,Set/2026,nan,nan,nan,nan
+Lançamento UP - Av.85,Setor Marista,Ago/2026,nan,nan,nan,nan
+Life Colorado,Chácaras Mansões Rosas de Ouro,Out/2026,nan,nan,nan,nan
+Areião 1141,Setor Marista,nan,nan,nan,nan,Goiânia
+Alameda Opus,Setor Marista,nan,nan,nan,nan,Goiânia
+Casa Conceito Marista,Setor Marista,nan,nan,nan,nan,Goiânia
+City Code Areião,Setor Marista,nan,nan,nan,nan,Goiânia
+Una Areião,Setor Pedro Ludovico,nan,nan,nan,nan,Goiânia
+Le Blu Consciente,Setor Marista,nan,nan,nan,nan,Goiânia
+Metropolitan Marista,Setor Marista,nan,nan,nan,nan,Goiânia
+Tempo Flamboyant Residencial,Jardim Goiás,nan,nan,nan,nan,Goiânia
+Greco Parque Cascavel,Vila Rosa,nan,nan,nan,nan,Goiânia
+FR. Atlant,Jardim Atlântico,nan,nan,nan,nan,Goiânia
